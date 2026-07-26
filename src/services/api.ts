@@ -23,6 +23,14 @@ export interface Rule {
   evidence?: string;
 }
 
+export interface Screenshot {
+  label: string; // e.g. "سطح المكتب", "الجوال"
+  viewport: "desktop" | "tablet" | "mobile";
+  url: string; // image URL
+  width: number;
+  height: number;
+}
+
 export interface Audit {
   id: string;
   url: string;
@@ -31,6 +39,7 @@ export interface Audit {
   score: number; // 0-100
   grade: "A" | "B" | "C" | "D";
   rules: Rule[];
+  screenshots: Screenshot[];
 }
 
 export const CATEGORY_LABELS: Record<Category, string> = {
