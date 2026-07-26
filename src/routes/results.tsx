@@ -5,7 +5,7 @@ import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, 
 import { AppHeader } from "@/components/app-header";
 import { ScoreGauge } from "@/components/score-gauge";
 import { Button } from "@/components/ui/button";
-import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Category } from "@/services/api";
+import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Category, type Screenshot } from "@/services/api";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({ url: z.string() });
