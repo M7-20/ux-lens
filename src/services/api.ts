@@ -112,8 +112,7 @@ function buildAudit(url: string): Audit {
   const pass = rules.filter((r) => r.status === "pass").length;
   const warn = rules.filter((r) => r.status === "warn").length;
   const score = Math.round(((pass + warn * 0.5) / rules.length) * 100);
-  const encoded = encodeURIComponent(url);
-  const shot = (viewport: Screenshot["viewport"], w: number, h: number) =>
+  const shot = (w: number, h: number) =>
     `https://image.thum.io/get/width/${w}/crop/${h}/viewportWidth/${w}/${url}`;
   return {
     id: `aud_${Math.abs(url.split("").reduce((a, c) => a + c.charCodeAt(0), 0))}`,
@@ -124,12 +123,11 @@ function buildAudit(url: string): Audit {
     grade: gradeFromScore(score),
     rules,
     screenshots: [
-      { label: "سطح المكتب", viewport: "desktop", url: shot("desktop", 1440, 900), width: 1440, height: 900 },
-      { label: "اللوحي", viewport: "tablet", url: shot("tablet", 900, 1200), width: 900, height: 1200 },
-      { label: "الجوال", viewport: "mobile", url: shot("mobile", 480, 900), width: 480, height: 900 },
+      { label: "سطح المكتب", viewport: "desktop", url: shot(1440, 900), width: 1440, height: 900 },
+      { label: "اللوحي", viewport: "tablet", url: shot(900, 1200), width: 900, height: 1200 },
+      { label: "الجوال", viewport: "mobile", url: shot(480, 900), width: 480, height: 900 },
     ],
   };
-  void encoded;
 }
 
 const RECENT: { url: string; scannedAt: string; score: number }[] = [
