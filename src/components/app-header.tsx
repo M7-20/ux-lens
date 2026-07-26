@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Lens } from "lucide-react";
+
 
 export function AppHeader() {
   return (
