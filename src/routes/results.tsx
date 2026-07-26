@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ScoreGauge } from "@/components/score-gauge";
 import { Button } from "@/components/ui/button";
-import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Category } from "@/services/api";
+import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Category, type Screenshot } from "@/services/api";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({ url: z.string() });
@@ -153,7 +153,11 @@ function Results() {
           </div>
         </section>
 
+        {/* Screenshots gallery */}
+        <ScreenshotsSection shots={audit.screenshots} url={audit.url} />
+
         {/* Rules */}
+
         <section className="mt-10">
           <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -263,5 +267,142 @@ function RuleRow({ rule }: { rule: Rule }) {
         </div>
       )}
     </div>
+  );
+}
+
+const VIEWPORT_ICON = {
+  desktop: Monitor,
+  tablet: Tablet,
+  mobile: Smartphone,
+} as const;
+
+function ScreenshotsSection({ shots, url }: { shots: Screenshot[]; url: string }) {
+  const [active, setActive] = useState(0);
+  const [preview, setPreview] = useState<Screenshot | null>(null);
+  const current = shots[active];
+
+  if (!shots.length) return null;
+
+  return (
+    <section className="mt-10">
+      <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-base font-bold text-ink">
+            <span className="h-6 w-1.5 rounded-full bg-gold" />
+            <ImageIcon className="h-4 w-4 text-brand" />
+            لقطات الصفحة الملتقطة
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {shots.map((s, i) => {
+              const Icon = VIEWPORT_ICON[s.viewport];
+              return (
+                <button
+                  key={s.viewport}
+                  onClick={() => setActive(i)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+                    active === i
+                      ? "border-brand bg-brand text-brand-foreground shadow-md shadow-brand/20"
+                      : "border-hairline bg-white/70 text-muted-foreground hover:border-brand/40 hover:text-brand"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {s.label}
+                  <span className="font-mono tabular-nums text-[10px] opacity-70">
+                    {s.width}×{s.height}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-12">
+          <button
+            onClick={() => setPreview(current)}
+            className="group relative col-span-12 overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-sm md:col-span-8"
+          >
+            <div
+              className="relative w-full bg-panel/5"
+              style={{ aspectRatio: `${current.width} / ${current.height}` }}
+            >
+              <img
+                src={current.url}
+                alt={`لقطة ${current.label} للموقع ${url}`}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="absolute bottom-3 left-3 rounded-lg bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                اضغط للتكبير
+              </div>
+            </div>
+          </button>
+
+          <div className="col-span-12 grid grid-cols-3 gap-3 md:col-span-4 md:grid-cols-1">
+            {shots.map((s, i) => (
+              <button
+                key={s.viewport}
+                onClick={() => setActive(i)}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border bg-white/70 shadow-sm transition",
+                  active === i
+                    ? "border-brand ring-2 ring-brand/30"
+                    : "border-hairline hover:border-brand/40"
+                )}
+              >
+                <div
+                  className="relative w-full bg-panel/5"
+                  style={{ aspectRatio: `${s.width} / ${s.height}` }}
+                >
+                  <img
+                    src={s.url}
+                    alt={s.label}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between border-t border-hairline bg-white/80 px-2.5 py-1.5 text-[11px] font-bold text-ink">
+                  <span>{s.label}</span>
+                  <span className="font-mono tabular-nums text-muted-foreground">
+                    {s.width}×{s.height}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4 backdrop-blur"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-white/95 px-4 py-2.5 backdrop-blur">
+              <div className="text-sm font-bold text-ink">{preview.label}</div>
+              <button
+                onClick={() => setPreview(null)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-ink"
+                aria-label="إغلاق"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <img src={preview.url} alt={preview.label} className="block w-full" />
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
