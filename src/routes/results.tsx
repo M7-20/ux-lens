@@ -14,9 +14,9 @@ export const Route = createFileRoute("/results")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "UX Lens — نتائج الفحص" },
+      { title: "عدسة تجربة المستخدم — نتائج الفحص" },
       { name: "description", content: "تقرير امتثال الموقع الحكومي لمعايير هيئة الحكومة الرقمية." },
-      { property: "og:title", content: "UX Lens — نتائج الفحص" },
+      { property: "og:title", content: "عدسة تجربة المستخدم — نتائج الفحص" },
       { property: "og:description", content: "تقرير مفصّل يعرض 27 معيارًا مع التوصيات." },
       { name: "robots", content: "noindex" },
     ],
@@ -64,171 +64,189 @@ function Results() {
 
   if (!audit) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <AppHeader />
         <div className="mx-auto max-w-4xl px-4 py-24 text-center text-sm text-muted-foreground">جارٍ التحميل…</div>
       </div>
     );
   }
 
+  const gradeLabel =
+    audit.grade === "A" ? "امتثال ممتاز"
+    : audit.grade === "B" ? "امتثال جيد"
+    : audit.grade === "C" ? "يحتاج تحسينات"
+    : "امتثال ضعيف";
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-4 py-8 md:px-6">
         {/* Header */}
         <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="min-w-0">
-            <div className="text-xs text-muted-foreground">تقرير الفحص</div>
-            <div className="ltr mt-1 truncate font-mono text-lg text-ink">{audit.url}</div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-[11px] font-bold text-brand">
+              تقرير التدقيق الرقمي
+            </div>
+            <div className="ltr mt-2 truncate font-mono text-lg font-semibold text-ink">{audit.url}</div>
             <div className="mt-1 text-xs text-muted-foreground">
               {new Date(audit.scannedAt).toLocaleString("ar-SA", { dateStyle: "long", timeStyle: "short" })}
               {" · "}المدة: <span className="font-mono">{audit.durationSec}s</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline" className="border-hairline">
+            <Button asChild variant="outline" className="rounded-xl border-hairline bg-white/70 backdrop-blur">
               <Link to="/"><RefreshCw className="ml-1 h-4 w-4" />فحص جديد</Link>
             </Button>
-            <Button className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={() => window.print()}>
+            <Button
+              className="rounded-xl bg-gradient-to-br from-brand to-brand-deep text-brand-foreground shadow-lg shadow-brand/20 hover:opacity-95"
+              onClick={() => window.print()}
+            >
               <Download className="ml-1 h-4 w-4" />تصدير PDF
             </Button>
           </div>
         </div>
 
-        {/* Score panel */}
-        <section className="grid gap-6 rounded-2xl bg-panel p-6 text-panel-foreground md:grid-cols-[auto_1fr] md:p-8">
-          <div className="mx-auto md:mx-0">
-            <ScoreGauge value={audit.score} grade={audit.grade} />
-          </div>
-          <div className="flex flex-col justify-center gap-6">
-            <div>
-              <div className="text-sm text-panel-foreground/70">نتيجة الامتثال الإجمالية</div>
-              <h2 className="mt-1 text-2xl font-semibold">
-                {audit.grade === "A" ? "امتثال ممتاز" : audit.grade === "B" ? "امتثال جيد" : audit.grade === "C" ? "يحتاج تحسينات" : "امتثال ضعيف"}
-              </h2>
-              <p className="mt-1 max-w-lg text-sm text-panel-foreground/70">
-                نتيجة الموقع من مطابقته للمعايير الـ27 المعتمدة من هيئة الحكومة الرقمية.
-              </p>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <Tally label="مطابق" count={tally.pass} color="var(--pass)" />
-              <Tally label="يحتاج تحسين" count={tally.warn} color="var(--warn)" />
-              <Tally label="مخالف" count={tally.fail} color="var(--fail)" />
-            </div>
-          </div>
-        </section>
-
-        {/* Category breakdown */}
-        <section className="mt-10">
-          <h3 className="mb-3 text-sm font-semibold text-ink">التقييم حسب الفئة</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {categoryStats.map((c) => (
-              <div key={c.category} className="rounded-xl border border-hairline bg-surface p-4">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm font-medium text-ink">{CATEGORY_LABELS[c.category]}</div>
-                  <div className="font-mono text-sm tabular-nums text-muted-foreground">{c.pct}%</div>
-                </div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{
-                      width: `${c.pct}%`,
-                      background: c.pct >= 85 ? "var(--pass)" : c.pct >= 60 ? "var(--warn)" : "var(--fail)",
-                    }}
-                  />
-                </div>
+        {/* Score + summary panel */}
+        <section className="grid gap-6 md:grid-cols-12">
+          <div className="glass relative overflow-hidden rounded-3xl p-8 shadow-xl shadow-brand/5 md:col-span-5">
+            <div className="absolute -top-16 -left-16 h-40 w-40 rounded-full bg-brand/10 blur-2xl" />
+            <div className="relative flex flex-col items-center text-center">
+              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                مؤشر الالتزام الكلي
               </div>
-            ))}
+              <div className="mt-5">
+                <ScoreGauge value={audit.score} grade={audit.grade} />
+              </div>
+              <h2 className="mt-4 text-lg font-black text-ink">{gradeLabel}</h2>
+              <div className="mt-6 grid w-full grid-cols-3 gap-2">
+                <Tally label="مطابق" count={tally.pass} tint="var(--pass)" />
+                <Tally label="تحسين" count={tally.warn} tint="var(--warn)" />
+                <Tally label="مخالف" count={tally.fail} tint="var(--fail)" />
+              </div>
+            </div>
           </div>
-        </section>
 
-        {/* Filters + rules */}
-        <section className="mt-10">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-ink">تفاصيل المعايير ({audit.rules.length})</h3>
-            <div className="flex flex-wrap gap-2">
-              {([
-                { k: "all", label: "الكل", n: audit.rules.length },
-                { k: "fail", label: "مخالف", n: tally.fail },
-                { k: "warn", label: "تحسين", n: tally.warn },
-                { k: "pass", label: "مطابق", n: tally.pass },
-              ] as const).map((c) => (
-                <button
-                  key={c.k}
-                  onClick={() => setFilter(c.k as any)}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-xs transition",
-                    filter === c.k
-                      ? "border-ink bg-ink text-background"
-                      : "border-hairline bg-surface text-muted-foreground hover:border-ink/40 hover:text-ink"
-                  )}
-                >
-                  {c.label} <span className="font-mono tabular-nums">({c.n})</span>
-                </button>
+          <div className="glass-soft rounded-3xl p-6 shadow-xl shadow-brand/5 md:col-span-7">
+            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
+              <span className="h-5 w-1 rounded-full bg-gold" />
+              التقييم حسب الفئة
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {categoryStats.map((c) => (
+                <div key={c.category} className="rounded-2xl border border-white/60 bg-white/70 p-4">
+                  <div className="flex items-baseline justify-between">
+                    <div className="text-sm font-bold text-ink">{CATEGORY_LABELS[c.category]}</div>
+                    <div className="font-mono text-sm font-bold tabular-nums text-brand">{c.pct}%</div>
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${c.pct}%`,
+                        background: c.pct >= 85 ? "var(--pass)" : c.pct >= 60 ? "var(--warn)" : "var(--fail)",
+                      }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
+        </section>
 
-          <div className="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline bg-surface">
-            {rules.map((r) => <RuleRow key={r.id} rule={r} />)}
-            {rules.length === 0 && (
-              <div className="p-10 text-center text-sm text-muted-foreground">لا توجد معايير مطابقة للفلتر.</div>
-            )}
+        {/* Rules */}
+        <section className="mt-10">
+          <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="flex items-center gap-2 text-base font-bold text-ink">
+                <span className="h-6 w-1.5 rounded-full bg-gold" />
+                تفاصيل التدقيق حسب معايير (DGA) — {audit.rules.length} معيار
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { k: "all", label: "الكل", n: audit.rules.length },
+                  { k: "fail", label: "مخالف", n: tally.fail },
+                  { k: "warn", label: "تحسين", n: tally.warn },
+                  { k: "pass", label: "مطابق", n: tally.pass },
+                ] as const).map((c) => (
+                  <button
+                    key={c.k}
+                    onClick={() => setFilter(c.k as any)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-medium transition",
+                      filter === c.k
+                        ? "border-brand bg-brand text-brand-foreground shadow-md shadow-brand/20"
+                        : "border-hairline bg-white/70 text-muted-foreground hover:border-brand/40 hover:text-brand"
+                    )}
+                  >
+                    {c.label} <span className="font-mono tabular-nums">({c.n})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {rules.map((r) => <RuleRow key={r.id} rule={r} />)}
+              {rules.length === 0 && (
+                <div className="p-10 text-center text-sm text-muted-foreground">لا توجد معايير مطابقة للفلتر.</div>
+              )}
+            </div>
           </div>
         </section>
 
-        <footer className="mt-16 border-t border-hairline pt-6 text-xs text-muted-foreground">
-          UX Lens · وزارة البيئة والمياه والزراعة · معايير هيئة الحكومة الرقمية
+        <footer className="mt-16 border-t border-white/60 pt-6 text-center text-xs text-muted-foreground">
+          عدسة تجربة المستخدم · وزارة البيئة والمياه والزراعة · معايير هيئة الحكومة الرقمية
         </footer>
       </main>
     </div>
   );
 }
 
-function Tally({ label, count, color }: { label: string; count: number; color: string }) {
+function Tally({ label, count, tint }: { label: string; count: number; tint: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-      <div className="flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full" style={{ background: color }} />
-        <span className="text-xs text-panel-foreground/70">{label}</span>
+    <div className="rounded-2xl border border-white/60 bg-white/70 p-3">
+      <div className="flex items-center justify-center gap-1.5">
+        <span className="h-2 w-2 rounded-full" style={{ background: tint }} />
+        <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       </div>
-      <div className="mt-1 font-mono text-2xl font-semibold tabular-nums">{count}</div>
+      <div className="mt-1 text-center font-mono text-2xl font-black tabular-nums text-ink">{count}</div>
     </div>
   );
 }
 
 function StatusIcon({ status }: { status: Status }) {
-  const base = "grid h-8 w-8 shrink-0 place-items-center rounded-full";
-  if (status === "pass") return <div className={cn(base, "bg-pass/10 text-pass")}><Check className="h-4 w-4" /></div>;
-  if (status === "warn") return <div className={cn(base, "bg-warn/10 text-warn")}><AlertTriangle className="h-4 w-4" /></div>;
-  return <div className={cn(base, "bg-fail/10 text-fail")}><X className="h-4 w-4" /></div>;
+  const base = "grid h-10 w-10 shrink-0 place-items-center rounded-xl";
+  if (status === "pass") return <div className={cn(base, "bg-pass/10 text-pass")}><Check className="h-5 w-5" /></div>;
+  if (status === "warn") return <div className={cn(base, "bg-warn/10 text-warn")}><AlertTriangle className="h-5 w-5" /></div>;
+  return <div className={cn(base, "bg-fail/10 text-fail")}><X className="h-5 w-5" /></div>;
 }
 
 function RuleRow({ rule }: { rule: Rule }) {
   const [open, setOpen] = useState(false);
   return (
-    <div>
+    <div className="overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-sm">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-background md:px-5"
+        className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-white md:px-5"
         aria-expanded={open}
       >
         <StatusIcon status={rule.status} />
-        <span className="font-mono text-xs tabular-nums text-muted-foreground">
-          {String(rule.id).padStart(2, "0")}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{rule.title}</span>
-        <span className="hidden shrink-0 rounded-md border border-hairline bg-background px-2 py-0.5 text-xs text-muted-foreground md:inline">
-          {CATEGORY_LABELS[rule.category]}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-bold text-ink">{rule.title}</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            {CATEGORY_LABELS[rule.category]}
+          </div>
+        </div>
+        <span className="hidden shrink-0 rounded-lg bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
+          المعيار {String(rule.id).padStart(2, "0")}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="border-t border-hairline bg-background/50 px-4 py-4 md:px-5 md:pr-16">
+        <div className="border-t border-hairline bg-white/60 px-4 py-4 md:px-5">
           <p className="text-sm leading-relaxed text-ink/80">{rule.description}</p>
           {rule.recommendation && (
-            <div className="mt-3 rounded-lg border-r-2 border-brand bg-brand/5 p-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-brand">
+            <div className="mt-3 rounded-xl border-r-2 border-gold bg-gold/5 p-3">
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-gold">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية
               </div>
               <div className="text-sm text-ink/90">{rule.recommendation}</div>
@@ -237,7 +255,7 @@ function RuleRow({ rule }: { rule: Rule }) {
           {rule.evidence && (
             <div className="mt-3">
               <div className="mb-1 text-xs text-muted-foreground">دليل تقني</div>
-              <div className="ltr overflow-x-auto rounded-md bg-panel px-3 py-2 font-mono text-xs text-panel-foreground/90">
+              <div className="ltr overflow-x-auto rounded-lg bg-panel px-3 py-2 font-mono text-xs text-panel-foreground/90">
                 {rule.evidence}
               </div>
             </div>

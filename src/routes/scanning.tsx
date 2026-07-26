@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { z } from "zod";
-import { AppHeader } from "@/components/app-header";
+import { AppHeader, AppLogo } from "@/components/app-header";
 import { startAudit } from "@/services/api";
 
 const searchSchema = z.object({ url: z.string() });
@@ -11,9 +11,9 @@ export const Route = createFileRoute("/scanning")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "UX Lens — جارٍ الفحص" },
+      { title: "عدسة تجربة المستخدم — جارٍ الفحص" },
       { name: "description", content: "جارٍ فحص الموقع وفق معايير هيئة الحكومة الرقمية." },
-      { property: "og:title", content: "UX Lens — جارٍ الفحص" },
+      { property: "og:title", content: "عدسة تجربة المستخدم — جارٍ الفحص" },
       { property: "og:description", content: "تحليل آلي للموقع الحكومي." },
       { name: "robots", content: "noindex" },
     ],
@@ -48,37 +48,43 @@ function Scanning() {
     return () => { active = false; };
   }, [url, navigate]);
 
+  const progress = (step / STEPS.length) * 100;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <AppHeader />
       <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-16 md:py-24">
-        <div className="mb-6 grid h-16 w-16 place-items-center rounded-full bg-panel text-panel-foreground">
-          <svg viewBox="0 0 24 24" className="h-8 w-8 animate-spin" style={{ animationDuration: "3s" }} fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="9" />
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
-          </svg>
+        <div className="relative mb-6">
+          <div className="absolute inset-0 -m-4 animate-ping rounded-3xl bg-brand/10" />
+          <AppLogo size={72} />
         </div>
-        <h1 className="text-xl font-semibold text-ink">جارٍ فحص الموقع</h1>
+        <h1 className="text-2xl font-black text-ink">جارٍ فحص الموقع</h1>
         <p className="ltr mt-1 font-mono text-sm text-muted-foreground">{url}</p>
 
-        <ol className="mt-10 w-full space-y-3">
+        <div className="mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-hairline">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand to-gold transition-all duration-700"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <ol className="glass mt-10 w-full space-y-3 rounded-3xl p-4 shadow-xl shadow-brand/5">
           {STEPS.map((label, i) => {
             const done = i < step;
             const active = i === step;
             return (
               <li
                 key={label}
-                className={`flex items-center gap-3 rounded-lg border bg-surface px-4 py-3 transition ${
-                  done ? "border-pass/30" : active ? "border-brand" : "border-hairline"
+                className={`flex items-center gap-3 rounded-2xl border bg-white/70 px-4 py-3 transition ${
+                  done ? "border-pass/30" : active ? "border-brand shadow-md shadow-brand/10" : "border-hairline"
                 }`}
               >
-                <div className={`grid h-7 w-7 place-items-center rounded-full ${
+                <div className={`grid h-8 w-8 place-items-center rounded-full ${
                   done ? "bg-pass text-white" : active ? "bg-brand text-brand-foreground" : "bg-background text-muted-foreground"
                 }`}>
-                  {done ? <Check className="h-4 w-4" /> : active ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono text-xs">{i + 1}</span>}
+                  {done ? <Check className="h-4 w-4" /> : active ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono text-xs font-bold">{i + 1}</span>}
                 </div>
-                <span className={`text-sm ${done ? "text-muted-foreground line-through decoration-hairline" : active ? "text-ink font-medium" : "text-muted-foreground"}`}>
+                <span className={`text-sm ${done ? "text-muted-foreground line-through decoration-hairline" : active ? "font-bold text-ink" : "text-muted-foreground"}`}>
                   {label}
                 </span>
               </li>

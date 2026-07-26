@@ -34,6 +34,8 @@
   --color-hairline: var(--hairline);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-deep: var(--brand-deep);
+  --color-gold: var(--gold);
   --color-panel: var(--panel);
   --color-panel-foreground: var(--panel-foreground);
   --color-pass: var(--pass);
@@ -45,29 +47,31 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 1rem;
 
-  /* UX Lens palette */
-  --background: oklch(0.955 0.005 180);       /* #EEF2F1 */
+  /* UX Lens · MEWA palette */
+  --background: oklch(0.97 0.008 155);        /* #F4F7F5 mint-tinted off-white */
   --surface: oklch(1 0 0);                    /* #FFFFFF */
-  --ink: oklch(0.19 0.015 190);               /* #0C1F1E */
-  --foreground: oklch(0.19 0.015 190);
-  --muted: oklch(0.955 0.005 180);
-  --muted-foreground: oklch(0.42 0.015 190);  /* #48605D */
-  --hairline: oklch(0.9 0.008 180);           /* #DCE5E3 */
-  --border: oklch(0.9 0.008 180);
-  --input: oklch(0.9 0.008 180);
+  --ink: oklch(0.22 0.02 175);                /* deep slate */
+  --foreground: oklch(0.22 0.02 175);
+  --muted: oklch(0.96 0.006 160);
+  --muted-foreground: oklch(0.5 0.015 190);
+  --hairline: oklch(0.92 0.008 160);
+  --border: oklch(0.92 0.008 160);
+  --input: oklch(0.92 0.008 160);
 
-  --brand: oklch(0.5 0.08 175);               /* #0B6E5F teal */
+  --brand: oklch(0.48 0.13 155);              /* #006C35 Saudi green */
+  --brand-deep: oklch(0.36 0.11 155);         /* #004D26 */
   --brand-foreground: oklch(0.99 0 0);
-  --panel: oklch(0.28 0.045 175);             /* #0B342E dark teal */
-  --panel-foreground: oklch(0.97 0.01 175);
+  --gold: oklch(0.73 0.09 82);                /* #C5A059 desert gold */
+  --panel: oklch(0.28 0.09 155);              /* #063f22 deep green panel */
+  --panel-foreground: oklch(0.97 0.01 155);
 
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.94 0.008 180);
+  --secondary: oklch(0.95 0.01 155);
   --secondary-foreground: var(--ink);
-  --accent: oklch(0.94 0.02 175);
+  --accent: oklch(0.94 0.03 155);
   --accent-foreground: var(--ink);
 
   --card: var(--surface);
@@ -75,9 +79,9 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --pass: oklch(0.62 0.13 155);               /* #2E9E6B */
-  --warn: oklch(0.72 0.13 75);                /* #D2952A */
-  --fail: oklch(0.61 0.19 30);                /* #D8503F */
+  --pass: oklch(0.6 0.14 155);
+  --warn: oklch(0.72 0.13 75);
+  --fail: oklch(0.61 0.19 30);
   --destructive: var(--fail);
   --destructive-foreground: oklch(0.99 0 0);
   --ring: var(--brand);
@@ -96,3 +100,13 @@
 }
 
 @utility ltr { direction: ltr; unicode-bidi: isolate; }
+@utility glass {
+  background: color-mix(in oklab, white 78%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in oklab, white 55%, transparent);
+}
+@utility glass-soft {
+  background: color-mix(in oklab, white 55%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in oklab, white 60%, transparent);
+}
