@@ -153,7 +153,11 @@ function Results() {
           </div>
         </section>
 
+        {/* Screenshots gallery */}
+        <ScreenshotsSection shots={audit.screenshots} url={audit.url} />
+
         {/* Rules */}
+
         <section className="mt-10">
           <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
