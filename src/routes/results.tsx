@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ScoreGauge } from "@/components/score-gauge";
 import { Button } from "@/components/ui/button";
