@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+# project uses bun.lock as the canonical lockfile
+package-lock.json
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
