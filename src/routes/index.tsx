@@ -7,9 +7,9 @@ import { getRecentAudits } from "@/services/api";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "عدسة تجربة المستخدم — فحص جديد" },
+      { title: "تدقيق الامتثال الرقمي — فحص جديد" },
       { name: "description", content: "ابدأ فحصًا جديدًا لموقع حكومي وفق معايير هيئة الحكومة الرقمية." },
-      { property: "og:title", content: "عدسة تجربة المستخدم — فحص جديد" },
+      { property: "og:title", content: "تدقيق الامتثال الرقمي — فحص جديد" },
       { property: "og:description", content: "أداة داخلية لفحص التزام المواقع الحكومية بمعايير DGA." },
     ],
   }),

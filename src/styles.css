@@ -49,29 +49,29 @@
 :root {
   --radius: 1rem;
 
-  /* UX Lens · MEWA palette */
-  --background: oklch(0.97 0.008 155);        /* #F4F7F5 mint-tinted off-white */
+  /* تدقيق الامتثال الرقمي · modern teal palette */
+  --background: oklch(0.97 0.01 195);         /* cool mint-teal off-white */
   --surface: oklch(1 0 0);                    /* #FFFFFF */
-  --ink: oklch(0.22 0.02 175);                /* deep slate */
-  --foreground: oklch(0.22 0.02 175);
-  --muted: oklch(0.96 0.006 160);
-  --muted-foreground: oklch(0.5 0.015 190);
-  --hairline: oklch(0.92 0.008 160);
-  --border: oklch(0.92 0.008 160);
-  --input: oklch(0.92 0.008 160);
+  --ink: oklch(0.24 0.03 200);                /* deep teal-slate */
+  --foreground: oklch(0.24 0.03 200);
+  --muted: oklch(0.96 0.008 195);
+  --muted-foreground: oklch(0.52 0.02 205);
+  --hairline: oklch(0.92 0.01 195);
+  --border: oklch(0.92 0.01 195);
+  --input: oklch(0.92 0.01 195);
 
-  --brand: oklch(0.48 0.13 155);              /* #006C35 Saudi green */
-  --brand-deep: oklch(0.36 0.11 155);         /* #004D26 */
+  --brand: oklch(40.97% 0.10803 151.488);
+  --brand-deep: oklch(36.577% 0.09236 153.314);         /* deeper teal */
   --brand-foreground: oklch(0.99 0 0);
-  --gold: oklch(0.73 0.09 82);                /* #C5A059 desert gold */
-  --panel: oklch(0.28 0.09 155);              /* #063f22 deep green panel */
-  --panel-foreground: oklch(0.97 0.01 155);
+  --gold: oklch(0.75 0.08 85);                /* soft gold accent */
+  --panel: oklch(0.30 0.05 205);              /* dark teal panel */
+  --panel-foreground: oklch(0.97 0.01 195);
 
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.95 0.01 155);
+  --secondary: oklch(0.95 0.012 195);
   --secondary-foreground: var(--ink);
-  --accent: oklch(0.94 0.03 155);
+  --accent: oklch(0.94 0.03 195);
   --accent-foreground: var(--ink);
 
   --card: var(--surface);
@@ -79,9 +79,9 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --pass: oklch(0.6 0.14 155);
-  --warn: oklch(0.72 0.13 75);
-  --fail: oklch(0.61 0.19 30);
+  --pass: oklch(0.60 0.13 165);
+  --warn: oklch(0.75 0.13 80);
+  --fail: oklch(0.62 0.19 25);
   --destructive: var(--fail);
   --destructive-foreground: oklch(0.99 0 0);
   --ring: var(--brand);
@@ -92,6 +92,11 @@
   html { direction: rtl; }
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(1200px 600px at 85% -10%, color-mix(in oklab, var(--brand) 52%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 8% 108%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 55%),
+      radial-gradient(700px 500px at 50% 40%, color-mix(in oklab, var(--brand) 28%, transparent), transparent 70%);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";

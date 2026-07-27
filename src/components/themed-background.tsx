@@ -6,7 +6,7 @@ export function ThemedBackground() {
 
       {/* soft green orb top-right */}
       <div
-        className="absolute -top-40 -right-40 h-[560px] w-[560px] rounded-full opacity-30 blur-3xl"
+        className="absolute -top-40 -right-40 h-[560px] w-[560px] rounded-full opacity-80 blur-3xl"
         style={{ background: "radial-gradient(circle, var(--brand) 0%, transparent 65%)" }}
       />
       {/* gold orb bottom-left */}

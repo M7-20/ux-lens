@@ -20,10 +20,20 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Python audit service
+audit-service/venv/
+audit-service/__pycache__/
+audit-service/.env
+audit-service/shots/
+audit-service/site_cache.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Claude Code local settings (per-developer, not shared)
+**/.claude/settings.local.json
 .DS_Store
 *.suo
 *.ntvs*

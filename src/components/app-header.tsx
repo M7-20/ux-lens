@@ -1,35 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 export function AppLogo({ size = 40 }: { size?: number }) {
-  return (
-    <div
-      className="relative grid place-items-center rounded-2xl bg-gradient-to-br from-brand to-brand-deep shadow-lg shadow-brand/20"
-      style={{ width: size, height: size }}
-      aria-hidden
-    >
-      <svg viewBox="0 0 24 24" className="text-white" width={size * 0.62} height={size * 0.62} fill="none" stroke="currentColor">
-        {/* dashed outer scan ring */}
-        <path
-          d="M10 2C6 2 2 6 2 10s4 8 8 8"
-          stroke="var(--gold)"
-          strokeWidth="1.8"
-          strokeDasharray="2 2"
-          strokeLinecap="round"
-        />
-        {/* magnifier body */}
-        <circle cx="10" cy="10" r="6.2" strokeWidth="1.6" />
-        <circle cx="10" cy="10" r="2.6" strokeWidth="1.4" className="opacity-70" />
-        {/* crosshair */}
-        <path d="M10 6.5v7M6.5 10h7" strokeWidth="1.2" strokeLinecap="round" className="opacity-70" />
-        {/* handle */}
-        <path d="M15 15l6 6" strokeWidth="1.9" strokeLinecap="round" />
-      </svg>
-      <span
-        className="absolute -top-1 -left-1 h-3 w-3 rounded-full border-2 border-white bg-gold"
-        aria-hidden
-      />
-    </div>
-  );
+  return <img src="/logo.svg" alt="" width={size} height={size} style={{ width: size, height: size }} aria-hidden />;
 }
 
 export function AppHeader() {
@@ -39,7 +11,7 @@ export function AppHeader() {
         <Link to="/" className="flex items-center gap-3">
           <AppLogo size={44} />
           <div className="leading-tight">
-            <div className="text-base font-bold tracking-tight text-brand">عدسة تجربة المستخدم</div>
+            <div className="text-base font-bold tracking-tight text-[#14573A]">تدقيق الامتثال الرقمي</div>
             <div className="text-[11px] font-medium text-muted-foreground">
               نظام تدقيق المعايير الرقمية · وزارة البيئة والمياه والزراعة
             </div>
