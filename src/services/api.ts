@@ -105,14 +105,26 @@ export function getAudit(url: string): Promise<Audit> {
   return pending;
 }
 
-const RECENT: { url: string; scannedAt: string; score: number }[] = [
-  { url: "https://mewa.gov.sa", scannedAt: "2026-07-24T09:12:00Z", score: 82 },
-  { url: "https://my.gov.sa", scannedAt: "2026-07-22T14:45:00Z", score: 91 },
-  { url: "https://dga.gov.sa", scannedAt: "2026-07-20T11:03:00Z", score: 76 },
-  { url: "https://absher.sa", scannedAt: "2026-07-18T08:30:00Z", score: 68 },
-];
+export interface RecentAudit {
+  url: string;
+  scannedAt: string;
+  score: number;
+}
 
-export async function getRecentAudits() {
-  await new Promise((r) => setTimeout(r, 100));
-  return RECENT;
+export async function getRecentAudits(limit = 10): Promise<RecentAudit[]> {
+  const res = await fetch(`${AUDIT_SERVICE_URL}/audits/recent?limit=${limit}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export interface Stats {
+  totalAudits: number;
+  avgDurationSec: number;
+  avgScore: number;
+}
+
+export async function getStats(): Promise<Stats> {
+  const res = await fetch(`${AUDIT_SERVICE_URL}/stats`);
+  if (!res.ok) return { totalAudits: 0, avgDurationSec: 0, avgScore: 0 };
+  return res.json();
 }

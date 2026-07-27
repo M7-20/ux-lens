@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import engine
+import store
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -44,4 +45,20 @@ async def audit(req: AuditRequest):
     except Exception as e:
         raise HTTPException(500, f"فشل التدقيق: {e}")
     result["durationSec"] = round(time.time() - t0)
+    store.save_audit({
+        "url": result["url"],
+        "scannedAt": result["scannedAt"],
+        "score": result["score"],
+        "durationSec": result["durationSec"],
+    })
     return result
+
+
+@app.get("/audits/recent")
+def recent_audits(limit: int = 10):
+    return store.recent(limit)
+
+
+@app.get("/stats")
+def stats():
+    return store.stats()

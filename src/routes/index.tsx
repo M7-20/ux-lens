@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Clock, Globe, Sparkles } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
-import { getRecentAudits } from "@/services/api";
+import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,14 +16,18 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const SAMPLES = ["mewa.gov.sa", "my.gov.sa", "dga.gov.sa"];
+const SAMPLES = ["naama.sa"];
 
 function Index() {
   const navigate = useNavigate();
   const [url, setUrl] = useState("");
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof getRecentAudits>>>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
 
-  useEffect(() => { getRecentAudits().then(setRecent); }, []);
+  useEffect(() => {
+    getRecentAudits().then(setRecent);
+    getStats().then(setStats);
+  }, []);
 
   const submit = (raw: string) => {
     const v = raw.trim();
@@ -93,9 +97,9 @@ function Index() {
 
         {/* Stat strip */}
         <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <StatCard label="المواقع المفحوصة" value="1,240" tint="brand" />
-          <StatCard label="متوسط وقت التدقيق" value="45 ثانية" tint="gold" />
-          <StatCard label="معدل الامتثال" value="88٪" tint="brand" />
+          <StatCard label="المواقع المفحوصة" value={stats ? String(stats.totalAudits) : "—"} tint="brand" />
+          <StatCard label="متوسط وقت التدقيق" value={stats ? formatDuration(stats.avgDurationSec) : "—"} tint="gold" />
+          <StatCard label="معدل الامتثال" value={stats && stats.totalAudits > 0 ? `${stats.avgScore}٪` : "—"} tint="brand" />
         </section>
 
         {/* Recent scans */}
@@ -129,6 +133,11 @@ function Index() {
                 <ScoreBadge score={r.score} />
               </button>
             ))}
+            {recent.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-hairline p-8 text-center text-sm text-muted-foreground">
+                ما فيه فحوصات سابقة بعد — ابدأ أول فحص من الأعلى.
+              </div>
+            )}
           </div>
         </section>
       </main>
@@ -154,6 +163,14 @@ function StatCard({ label, value, tint }: { label: string; value: string; tint: 
       </div>
     </div>
   );
+}
+
+function formatDuration(sec: number): string {
+  if (sec <= 0) return "—";
+  if (sec < 60) return `${sec} ثانية`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s > 0 ? `${m} د ${s} ث` : `${m} دقيقة`;
 }
 
 function ScoreBadge({ score }: { score: number }) {
