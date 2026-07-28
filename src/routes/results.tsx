@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon, MapPin, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon, MapPin, Loader2, HelpCircle } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ScoreGauge } from "@/components/score-gauge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/results")({
   component: Results,
 });
 
-const SEVERITY: Record<Status, number> = { fail: 0, warn: 1, pass: 2 };
+const SEVERITY: Record<Status, number> = { fail: 0, warn: 1, manual_review: 2, pass: 3 };
 
 function Results() {
   const { url } = Route.useSearch();
@@ -56,25 +56,43 @@ function Results() {
   );
 
   const tally = useMemo(() => {
-    if (!audit) return { pass: 0, warn: 0, fail: 0 };
+    if (!audit) return { pass: 0, warn: 0, fail: 0, manual_review: 0 };
     return audit.rules.reduce(
       (acc, r) => ({ ...acc, [r.status]: acc[r.status] + 1 }),
-      { pass: 0, warn: 0, fail: 0 }
+      { pass: 0, warn: 0, fail: 0, manual_review: 0 }
     );
   }, [audit]);
 
   const categoryStats = useMemo(() => {
     if (!audit) return [];
-    const map = new Map<Category, { total: number; passWeight: number }>();
+    // مرجّح بعدد المواضع المفحوصة/الملتزمة لكل قاعدة (عند توفّرها من المحرك)؛ القواعد بلا بيانات مواضع
+    // (أحكام بصرية بحتة) تُحتسب كموضع واحد لكل منها حتى لا تُهمَل من الترجيح.
+    const map = new Map<Category, { checked: number; passed: number; rulesTotal: number; rulesPassed: number; hasLocations: boolean }>();
     for (const r of audit.rules) {
-      const cur = map.get(r.category) ?? { total: 0, passWeight: 0 };
-      cur.total += 1;
-      cur.passWeight += r.status === "pass" ? 1 : r.status === "warn" ? 0.5 : 0;
+      if (r.status === "manual_review") continue; // غير محسوم عمدًا — يُستبعد كليًا من حساب النسبة
+      const cur = map.get(r.category) ?? { checked: 0, passed: 0, rulesTotal: 0, rulesPassed: 0, hasLocations: false };
+      cur.rulesTotal += 1;
+      if (r.status === "pass") cur.rulesPassed += 1;
+      if (r.checkedLocations != null && r.checkedLocations > 0) {
+        cur.checked += r.checkedLocations;
+        cur.passed += r.passedLocations ?? 0;
+        cur.hasLocations = true;
+      } else {
+        cur.checked += 1;
+        cur.passed += r.status === "pass" ? 1 : r.status === "warn" ? 0.5 : 0;
+      }
       map.set(r.category, cur);
     }
     return (Object.keys(CATEGORY_LABELS) as Category[]).map((c) => {
-      const v = map.get(c) ?? { total: 0, passWeight: 0 };
-      return { category: c, pct: v.total ? Math.round((v.passWeight / v.total) * 100) : 0, total: v.total };
+      const v = map.get(c) ?? { checked: 0, passed: 0, rulesTotal: 0, rulesPassed: 0, hasLocations: false };
+      return {
+        category: c,
+        pct: v.checked ? Math.round((v.passed / v.checked) * 100) : 0,
+        total: v.rulesTotal,
+        // فئة بلا أي قاعدة مقيسة كوديًا: بدل نسبة مئوية موهمة بالدقة، اعرض كسر القواعد مباشرةً
+        showAsFraction: !v.hasLocations,
+        rulesPassed: v.rulesPassed,
+      };
     });
   }, [audit]);
 
@@ -161,12 +179,24 @@ function Results() {
               <div className="mt-5">
                 <ScoreGauge value={audit.score} grade={audit.grade} />
               </div>
+              <div dir="rtl" className="mt-2 text-xs text-muted-foreground">
+                مؤكد من <span dir="ltr" className="inline-block">CSS/DOM</span>:{" "}
+                <span dir="ltr" className="inline-block font-mono font-bold tabular-nums text-ink">{audit.score}%</span>
+                {" · "}شاملاً التقديرات البصرية:{" "}
+                <span dir="ltr" className="inline-block font-mono font-bold tabular-nums text-ink">{audit.scoreEstimated}%</span>
+              </div>
               <h2 className="mt-4 text-lg font-black text-ink">{gradeLabel}</h2>
               <div className="mt-6 grid w-full grid-cols-3 gap-2">
                 <Tally label="مطابق" count={tally.pass} tint="var(--pass)" />
                 <Tally label="تحسين" count={tally.warn} tint="var(--warn)" />
                 <Tally label="مخالف" count={tally.fail} tint="var(--fail)" />
               </div>
+              {tally.manual_review > 0 && (
+                <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300/60 bg-slate-100/70 px-3 py-1.5 text-xs font-medium text-slate-500">
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  {tally.manual_review} تحقق يدوي — غير محسوم، مستثنى من النسبة
+                </div>
+              )}
             </div>
           </div>
 
@@ -180,17 +210,21 @@ function Results() {
                 <div key={c.category} className="rounded-2xl border border-white/60 bg-white/70 p-4">
                   <div className="flex items-baseline justify-between">
                     <div className="text-sm font-bold text-ink">{CATEGORY_LABELS[c.category]}</div>
-                    <div className="font-mono text-sm font-bold tabular-nums text-brand">{c.pct}%</div>
+                    <div className="font-mono text-sm font-bold tabular-nums text-brand">
+                      {c.showAsFraction ? `${c.rulesPassed}/${c.total} معيار` : `${c.pct}%`}
+                    </div>
                   </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${c.pct}%`,
-                        background: c.pct >= 85 ? "var(--pass)" : c.pct >= 60 ? "var(--warn)" : "var(--fail)",
-                      }}
-                    />
-                  </div>
+                  {!c.showAsFraction && (
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${c.pct}%`,
+                          background: c.pct >= 85 ? "var(--pass)" : c.pct >= 60 ? "var(--warn)" : "var(--fail)",
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -212,6 +246,7 @@ function Results() {
                     { k: "fail", label: "مخالف", n: tally.fail },
                     { k: "warn", label: "تحسين", n: tally.warn },
                     { k: "pass", label: "مطابق", n: tally.pass },
+                    { k: "manual_review", label: "تحقق يدوي", n: tally.manual_review },
                   ] as const).map((c) => (
                     <button
                       key={c.k}
@@ -275,6 +310,7 @@ function StatusIcon({ status }: { status: Status }) {
   const base = "grid h-10 w-10 shrink-0 place-items-center rounded-xl";
   if (status === "pass") return <div className={cn(base, "bg-pass/10 text-pass")}><Check className="h-5 w-5" /></div>;
   if (status === "warn") return <div className={cn(base, "bg-warn/10 text-warn")}><AlertTriangle className="h-5 w-5" /></div>;
+  if (status === "manual_review") return <div className={cn(base, "bg-slate-400/10 text-slate-500")}><HelpCircle className="h-5 w-5" /></div>;
   return <div className={cn(base, "bg-fail/10 text-fail")}><X className="h-5 w-5" /></div>;
 }
 
@@ -329,7 +365,7 @@ function RuleRow({
           {rule.evidence && (
             <div className="mt-3">
               <div className="mb-1 text-xs text-muted-foreground">دليل تقني</div>
-              <div className="ltr overflow-x-auto rounded-lg bg-panel px-3 py-2 font-mono text-xs text-panel-foreground/90">
+              <div dir="rtl" className="overflow-x-auto rounded-lg bg-panel px-3 py-2 text-xs text-panel-foreground/90">
                 {rule.evidence}
               </div>
             </div>
@@ -420,9 +456,10 @@ function ScreenshotPanel({
         </div>
       )}
 
+      <div className="relative max-h-[70vh] w-full overflow-y-auto overscroll-contain rounded-2xl border border-white/60 shadow-sm">
       <button
         onClick={() => setPreview(current)}
-        className="group relative block w-full overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-sm"
+        className="group relative block w-full bg-white/70"
       >
         <div
           className="relative w-full bg-panel/5"
@@ -458,6 +495,7 @@ function ScreenshotPanel({
           </div>
         </div>
       </button>
+      </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2">
         {shots.map((s, i) => (

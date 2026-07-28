@@ -8,6 +8,7 @@
 import asyncio
 import hashlib
 import json
+import logging
 import re
 import time
 from collections import Counter, defaultdict
@@ -22,6 +23,14 @@ from google.genai import errors, types
 from PIL import Image
 from playwright.async_api import async_playwright
 from pydantic import BaseModel
+
+logger = logging.getLogger("uxlens")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s [%(name)s] %(message)s", "%H:%M:%S"))
+    logger.addHandler(_handler)
+    logger.propagate = False
 
 BASE_DIR = Path(__file__).parent
 SHOTS_DIR = BASE_DIR / "shots"
@@ -544,29 +553,55 @@ def _over_img(e, imgs):
 
 def run_checks(page: dict) -> dict:
     fviol = [e for e in page["fonts"] if APPROVED_FONT.lower() not in e.get("rendered", e["font"]).lower()]
-    rviol = check_radius(page["radii"])
-    sviol = check_spacing(page["spacing"])
-    cviol = check_colors(page["colors"])
-    tpl_ok = bool(page["statusbar"].get("found"))
-    aviol, a_unv = check_contrast(page["fonts"])
+    logger.info(f"fonts: {len(fviol)}/{len(page['fonts'])} violations")
 
+    rviol = check_radius(page["radii"])
+    logger.info(f"radius: {len(rviol)}/{len(page['radii'])} violations")
+
+    sviol = check_spacing(page["spacing"])
+    logger.info(f"spacing: {len(sviol)}/{len(page['spacing'])} violations")
+
+    cviol = check_colors(page["colors"])
+    logger.info(f"colors: {len(cviol)}/{len(page['colors'])} violations")
+
+    tpl_ok = bool(page["statusbar"].get("found"))
+    if tpl_ok:
+        logger.info("statusbar: found via DOM")
+    else:
+        sample = page["statusbar"].get("sample", "")
+        logger.info(f"statusbar: not found, sample={sample[:80]!r}")
+
+    aviol, a_unv = check_contrast(page["fonts"])
     a_img = [e for e in aviol if _over_img(e, page["imgs"])]
     if a_img:
         aviol = [e for e in aviol if not _over_img(e, page["imgs"])]
         a_unv += len(a_img)
+        logger.info(f"excluded {len(a_img)} contrast checks over content images")
+    logger.info(f"contrast: {len(aviol)}/{len(page['fonts']) - a_unv} violations ({a_unv} unmeasurable)")
 
     kviol = check_tracking(page["fonts"])
-    pviol = check_parawidth(page["paras"])
-    fzv = check_fontsize(page["fonts"])
-    grv, g_unv = check_gradients(page["grads"])
-    uiv, u_unv = check_controls(page["controls"])
+    k_total = sum(1 for e in page["fonts"] if e.get("fs", 0) >= TRACK_MIN)
+    logger.info(f"tracking: {len(kviol)}/{k_total} violations")
 
+    pviol = check_parawidth(page["paras"])
+    logger.info(f"paragraphs: {len(pviol)}/{len(page['paras'])} violations")
+
+    fzv = check_fontsize(page["fonts"])
+    logger.info(f"fontsize: {len(fzv)}/{len(page['fonts'])} violations")
+
+    grv, g_unv = check_gradients(page["grads"])
+    logger.info(f"gradients: {len(grv)}/{len(page['grads']) - g_unv} violations ({g_unv} unmeasurable)")
+
+    uiv, u_unv = check_controls(page["controls"])
     u_img = [e for e in uiv if _over_img(e, page["imgs"])]
     if u_img:
         uiv = [e for e in uiv if not _over_img(e, page["imgs"])]
         u_unv += len(u_img)
+        logger.info(f"excluded {len(u_img)} control-contrast checks over content images")
+    logger.info(f"controls: {len(uiv)}/{len(page['controls']) - u_unv} violations ({u_unv} unmeasurable)")
 
     rtv = check_rtl(page["rtl"])
+    logger.info(f"rtl: {len(rtv)} violations")
 
     return {"fviol": fviol, "rviol": rviol, "sviol": sviol, "cviol": cviol, "tpl_ok": tpl_ok,
             "aviol": aviol, "a_unv": a_unv, "kviol": kviol, "pviol": pviol,
@@ -685,6 +720,7 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
     if len(tiles) > MAX_TILES:
         th = -(-H // MAX_TILES) + OVERLAP
         tiles = make_tiles(H, th, OVERLAP)
+    logger.info(f"visual scan: {len(tiles)} tiles (page height={H}px)")
 
     cache = json.load(open(CACHE_PATH, encoding="utf-8")) if CACHE_PATH.exists() else {}
     full_image = Image.open(page["shot"]).convert("RGB")
@@ -721,19 +757,29 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
             cache[k] = it
         save_cache(cache)
 
+    cached_n = sum(1 for _, _, _, c in results if c)
+    logger.info(f"visual scan: {cached_n}/{len(results)} tiles from cache, {len(results) - cached_n} analyzed fresh")
+    for i, _key, items, cached in results:
+        logger.info(f"visual scan tile {i + 1}/{len(tiles)}: {len(items)} raw findings ({'cache' if cached else 'fresh'})")
+
     vv, on_imgs = [], []
+    excluded_code = excluded_global = excluded_box = excluded_broken = 0
     for i, key, items, cached in results:
         y0, y1 = tiles[i]
         for it in items:
             rid = it.get("rule_id", "")
             if rid in CODE_CHECKED:
+                excluded_code += 1
                 continue
             if i > 0 and rid in GLOBAL_TOP:
+                excluded_global += 1
                 continue
             box = to_box(it, W, y1 - y0, y0)
             if not box:
+                excluded_box += 1
                 continue
             if on_broken(box, page["broken"]):
+                excluded_broken += 1
                 continue
             v = {"box": box, "rule_id": rid, "sev": it["severity"],
                  "conf": it["confidence"], "rec": it.get("recommendation"),
@@ -743,7 +789,21 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
                 continue
             vv.append(v)
 
-    return dedup(vv, DEDUP_IOU), dedup(on_imgs, DEDUP_IOU)
+    if excluded_code:
+        logger.info(f"excluded {excluded_code} visual findings already covered by code checks")
+    if excluded_global:
+        logger.info(f"excluded {excluded_global} header/template findings outside the first tile")
+    if excluded_box:
+        logger.info(f"excluded {excluded_box} findings with invalid bounding box")
+    if excluded_broken:
+        logger.info(f"excluded {excluded_broken} findings overlapping broken/unloaded images")
+    if on_imgs:
+        logger.info(f"excluded {len(on_imgs)} color violations over content images")
+
+    deduped = dedup(vv, DEDUP_IOU)
+    logger.info(f"dedup: {len(vv)} raw findings -> {len(deduped)} unique ({len(vv) - len(deduped)} merged)")
+
+    return deduped, dedup(on_imgs, DEDUP_IOU)
 
 
 # ============ 4) النتيجة والتجميع بشكل الواجهة (Audit) ============
@@ -772,7 +832,7 @@ def _status_for(rule: dict, violated: bool) -> str:
     return "fail" if rule.get("severity") == "Error" else "warn"
 
 
-def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
+def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict], elapsed: float | None = None) -> dict:
     W, H = page["shot_width"], page["shot_height"]
     fviol, rviol, sviol, cviol = checks["fviol"], checks["rviol"], checks["sviol"], checks["cviol"]
     tpl_ok, aviol, kviol, pviol = checks["tpl_ok"], checks["aviol"], checks["kviol"], checks["pviol"]
@@ -781,6 +841,25 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
     by_rule = defaultdict(list)
     for v in vv:
         by_rule[v["rule_id"]].append(v)
+
+    # عدد المواضع المفحوصة/الملتزمة لكل قاعدة مقيسة كوديًا (بيانات محسوبة أصلاً أعلاه — عرض فقط، بلا فحص جديد)
+    k_total = sum(1 for e in page["fonts"] if e.get("fs", 0) >= TRACK_MIN)
+    grad_checked = max(len(page["grads"]) - checks["g_unv"], 0)
+    acc_checked = max(len(page["fonts"]) - checks["a_unv"], 0)
+    ui_checked = max(len(page["controls"]) - checks["u_unv"], 0)
+    locations = {
+        "DGA-TYP-001": (len(page["fonts"]), len(page["fonts"]) - len(fviol)),
+        "DGA-TYP-002": (len(page["fonts"]), len(page["fonts"]) - len(fzv)),
+        "DGA-TYP-005": (k_total, k_total - len(kviol)),
+        "DGA-RAD-001": (len(page["radii"]), len(page["radii"]) - len(rviol)),
+        "DGA-SPC-001": (len(page["spacing"]), len(page["spacing"]) - len(sviol)),
+        "DGA-SPC-004": (len(page["paras"]), len(page["paras"]) - len(pviol)),
+        "DGA-CLR-001": (len(page["colors"]), len(page["colors"]) - len(cviol)),
+        "DGA-CLR-004": (grad_checked, grad_checked - len(grv)),
+        "DGA-ACC-001": (acc_checked, acc_checked - len(aviol)),
+        "DGA-ACC-002": (ui_checked, ui_checked - len(uiv)),
+        "DGA-TPL-001": (1, 1 if tpl_ok else 0),
+    }
 
     conf_ids, all_ids = set(), set()
     if fviol: conf_ids.add("DGA-TYP-001"); all_ids.add("DGA-TYP-001")
@@ -887,11 +966,12 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
             if tpl_ok:
                 status = "pass"
             else:
-                status = "warn"
-                sample = page["statusbar"].get("sample", "")
-                evidence = "لم يُعثر على شريط الحالة في الـ DOM — يحتاج تحقّقاً بصريًا يدويًا"
-                if sample:
-                    evidence += f" (عيّنة النص أعلى الصفحة: {sample[:80]})"
+                # عدم العثور على الشريط في الـ DOM (shadow roots/iframes المتاحة) لا يثبت غيابه —
+                # قد يكون داخل iframe عابر للمصدر يتعذّر الوصول إليه تقنيًا. لا نعلن مخالفة مؤكدة
+                # بناءً على عجزنا عن القياس، فتُستثنى هذه الحالة من العدّ والنسبة عمدًا.
+                status = "manual_review"
+                evidence = ("لم يُعثر على شريط الحالة في DOM الصفحة (فُحصت الـ shadow roots والـ iframes "
+                            "المتاحة) — راجع أعلى لقطة الصفحة يدوياً: إن كان الشريط ظاهراً فالمعيار مستوفى")
                 region = {"x": 0, "y": 0, "width": 100, "height": round(48 / H * 100, 2)}
         else:
             items = by_rule.get(rid, [])
@@ -906,6 +986,8 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
                 if items[0].get("rec"):
                     recommendation = items[0]["rec"]
 
+        # حالة "تحقق يدوي" غير محسومة عمدًا — تُستبعد من ترجيح المواضع بالكامل
+        loc = locations.get(rid) if status != "manual_review" else None
         rules_out.append({
             "id": rid,
             "category": r["category"],
@@ -915,7 +997,17 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
             "recommendation": recommendation,
             "evidence": evidence,
             "region": region,
+            "checkedLocations": loc[0] if loc else None,
+            "passedLocations": loc[1] if loc else None,
         })
+
+    rules_code = len(conf_ids & CODE_CHECKED)
+    rules_visual_high = len(conf_ids - CODE_CHECKED)
+    rules_visual_other = len(all_ids) - len(conf_ids)
+    elapsed_part = f" elapsed={round(elapsed)}s" if elapsed is not None else ""
+    logger.info(f"audit complete: url={url} conf={score_conf} est={score_all} "
+                f"rules_code={rules_code} rules_visual_high={rules_visual_high} "
+                f"rules_visual_other={rules_visual_other}{elapsed_part}")
 
     return {
         "id": f"aud_{abs(hash(url)) % 10_000_000}",
@@ -935,10 +1027,11 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict]) -> dict:
 
 # ============ 5) نقطة الدخول ============
 async def run_audit(url: str, gemini_api_key: str) -> dict:
+    t0 = time.time()
     page = await capture_page(url)
     checks = run_checks(page)
 
     client = genai.Client(api_key=gemini_api_key)
     vv, _on_imgs = await asyncio.to_thread(_run_visual_scan_sync, client, page)
 
-    return assemble_audit(url, page, checks, vv)
+    return assemble_audit(url, page, checks, vv, elapsed=time.time() - t0)

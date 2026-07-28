@@ -13,7 +13,7 @@ export type Category =
   | "Template Compliance"
   | "Accessibility";
 
-export type Status = "pass" | "warn" | "fail";
+export type Status = "pass" | "warn" | "fail" | "manual_review";
 
 export interface Region {
   x: number;      // نسبة مئوية من عرض الصورة (0-100)
@@ -31,6 +31,8 @@ export interface Rule {
   recommendation?: string;
   evidence?: string;
   region?: Region; // مكان المخالفة على لقطة سطح المكتب (نِسَب مئوية)
+  checkedLocations?: number | null; // إجمالي المواضع المفحوصة لهذه القاعدة (إن كانت مقيسة كوديًا)
+  passedLocations?: number | null; // عدد المواضع الملتزمة من إجمالي المواضع المفحوصة
 }
 
 export interface Screenshot {
@@ -46,7 +48,8 @@ export interface Audit {
   url: string;
   scannedAt: string; // ISO
   durationSec: number;
-  score: number; // 0-100
+  score: number; // 0-100 — النسبة المؤكّدة (CSS/DOM + بصري بثقة عالية)
+  scoreEstimated: number; // 0-100 — شاملاً كل التقديرات البصرية
   grade: "A" | "B" | "C" | "D";
   rules: Rule[];
   screenshots: Screenshot[];
@@ -64,7 +67,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "Accessibility": "إمكانية الوصول",
 };
 
-const AUDIT_SERVICE_URL = "http://localhost:8000";
+const AUDIT_SERVICE_URL = "https://tactics-executives-communist-parental.trycloudflare.com";
 
 // The real audit takes 1-2 minutes (Playwright capture + Gemini visual scan).
 // "/scanning" triggers the real call and "/results" re-requests the same url —
