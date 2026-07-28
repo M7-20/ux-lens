@@ -38,6 +38,7 @@ audit-service/audits_history.json
 
 # Claude Code local settings (per-developer, not shared)
 **/.claude/settings.local.json
+.lovable/
 .DS_Store
 *.suo
 *.ntvs*

@@ -19,7 +19,7 @@ export function AppHeader() {
         </Link>
         <div className="hidden items-center gap-2 rounded-full border border-white/60 bg-white/60 px-3 py-1.5 text-[11px] font-medium text-muted-foreground md:flex">
           <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-          معايير هيئة الحكومة الرقمية · 28 معيارًا
+          معايير هيئة الحكومة الرقمية · 27 معيارًا
         </div>
       </div>
     </header>

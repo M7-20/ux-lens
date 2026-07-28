@@ -3,8 +3,8 @@
     "source": "DGA Platforms Code Design System",
     "type": "DGA Design System Compliance Rules",
     "rule_prefix": "DGA",
-    "total_rules": 28,
-    "categories": 8
+    "total_rules": 27,
+    "categories": 9
   },
   "rules": [
     {

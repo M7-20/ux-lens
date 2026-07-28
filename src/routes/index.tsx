@@ -50,7 +50,7 @@ function Index() {
             فحص الامتثال الرقمي <span className="text-brand">للمواقع الحكومية</span>
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-            أدخل رابط الموقع الحكومي لبدء تدقيقه آليًا وفق المعايير الـ28 المعتمدة من هيئة الحكومة الرقمية (DGA).
+            أدخل رابط الموقع الحكومي لبدء تدقيقه آليًا وفق المعايير الـ27 المعتمدة من هيئة الحكومة الرقمية (DGA).
           </p>
 
           <form
@@ -126,7 +126,7 @@ function Index() {
                     <div className="ltr truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {new Date(r.scannedAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
-                      {" · "}28 معيار
+                      {" · "}27 معيار
                     </div>
                   </div>
                 </div>

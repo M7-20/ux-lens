@@ -17,7 +17,7 @@ export const Route = createFileRoute("/results")({
       { title: "تدقيق الامتثال الرقمي — نتائج الفحص" },
       { name: "description", content: "تقرير امتثال الموقع الحكومي لمعايير هيئة الحكومة الرقمية." },
       { property: "og:title", content: "تدقيق الامتثال الرقمي — نتائج الفحص" },
-      { property: "og:description", content: "تقرير مفصّل يعرض 28 معيارًا مع التوصيات." },
+      { property: "og:description", content: "تقرير مفصّل يعرض 27 معيارًا مع التوصيات." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -204,7 +204,7 @@ function Results() {
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="flex items-center gap-2 text-base font-bold text-ink">
                   <span className="h-6 w-1.5 rounded-full bg-gold" />
-                  تفاصيل التدقيق حسب معايير (DGA) — 28 معيار
+                  تفاصيل التدقيق حسب معايير (DGA) — {audit.rules.length} معيار
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {([
