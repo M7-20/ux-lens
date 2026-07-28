@@ -53,7 +53,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "أداة داخلية لوزارة البيئة والمياه والزراعة لفحص التزام المواقع الحكومية بمعايير هيئة الحكومة الرقمية." },
       { name: "author", content: "MEWA" },
       { property: "og:title", content: "تدقيق الامتثال الرقمي — منصة فحص الامتثال الرقمي" },
-      { property: "og:description", content: "فحص المواقع الحكومية السعودية وفق معايير DGA الـ27." },
+      { property: "og:description", content: "فحص المواقع الحكومية السعودية وفق معايير DGA الـ28." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

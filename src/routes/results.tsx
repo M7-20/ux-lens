@@ -17,7 +17,7 @@ export const Route = createFileRoute("/results")({
       { title: "تدقيق الامتثال الرقمي — نتائج الفحص" },
       { name: "description", content: "تقرير امتثال الموقع الحكومي لمعايير هيئة الحكومة الرقمية." },
       { property: "og:title", content: "تدقيق الامتثال الرقمي — نتائج الفحص" },
-      { property: "og:description", content: "تقرير مفصّل يعرض 27 معيارًا مع التوصيات." },
+      { property: "og:description", content: "تقرير مفصّل يعرض 28 معيارًا مع التوصيات." },
       { name: "robots", content: "noindex" },
     ],
   }),
