@@ -11,298 +11,298 @@
       "id": "DGA-TYP-001",
       "category": "Typography",
       "severity": "Error",
-      "title": "Wrong Font Family",
-      "description": "Text is not using IBM Plex Sans Arabic, the mandatory DGA typeface.",
+      "title": "خط غير معتمد",
+      "description": "النص لا يستخدم خط IBM Plex Sans Arabic، وهو الخط الإلزامي المعتمد من هيئة الحكومة الرقمية.",
       "detection_visual": "Inspect rendered font — if the letterforms don't match IBM Plex Sans Arabic (check Arabic glyph shapes and Latin 'g' style), the wrong font is loaded.",
       "detection_code": "Check computed font-family on body and all text elements. Must resolve to 'IBM Plex Sans Arabic'.",
       "expected": "IBM Plex Sans Arabic",
-      "recommendation": "Load IBM Plex Sans Arabic via Google Fonts or self-hosted. Set as the primary font-family on body. Ensure Arabic and Latin text both use this family."
+      "recommendation": "حمّل خط IBM Plex Sans Arabic عبر Google Fonts أو استضفه ذاتيًا، واجعله الخط الأساسي لعنصر body. تأكد من استخدام هذا الخط للنصوص العربية واللاتينية معًا."
     },
     {
       "id": "DGA-TYP-002",
       "category": "Typography",
       "severity": "Error",
-      "title": "Font Size Not From DGA Scale",
-      "description": "Text uses a font size that doesn't exist in the DGA typographic scale (12, 14, 16, 18, 20, 24, 30, 36, 48, 60, 72px).",
+      "title": "حجم خط خارج مقياس DGA",
+      "description": "النص يستخدم حجم خط غير موجود في مقياس DGA (12، 14، 16، 18، 20، 24، 30، 36، 48، 60، 72 بكسل).",
       "detection_visual": "Text appears slightly off from standard sizes — e.g., 15px instead of 14px or 16px.",
       "detection_code": "Extract computed font-size of all text elements. Compare against allowed set: [12, 14, 16, 18, 20, 24, 30, 36, 48, 60, 72].",
       "expected": "One of: 12px, 14px, 16px, 18px, 20px, 24px, 30px, 36px, 48px, 60px, 72px",
-      "recommendation": "Map all font sizes to the nearest DGA scale value. Use CSS custom properties (--text-md: 16px) from the DGA token set."
+      "recommendation": "طابق كل أحجام الخطوط مع أقرب قيمة من مقياس DGA. استخدم متغيرات CSS المخصصة (--text-md: 16px) من مجموعة توكنز DGA."
     },
     {
       "id": "DGA-TYP-003",
       "category": "Typography",
       "severity": "Warning",
-      "title": "Incorrect Line Height for Font Size",
-      "description": "Text uses a line-height that doesn't match the DGA-specified pairing for its font size.",
+      "title": "ارتفاع سطر غير مطابق لحجم الخط",
+      "description": "النص يستخدم ارتفاع سطر (line-height) لا يطابق الإقران المحدد من DGA لهذا الحجم.",
       "detection_visual": "Text feels too tight or too loose compared to the DGA reference templates.",
       "detection_code": "For each font-size, check line-height against: 72→90, 60→72, 48→60, 36→44, 30→38, 24→32, 20→30, 18→28, 16→24, 14→20, 12→18.",
       "expected": "See DGA typography scale pairings",
-      "recommendation": "Set line-height using the DGA scale pairing. E.g., text-md (16px) must use line-height 24px (1.5)."
+      "recommendation": "اضبط ارتفاع السطر حسب إقران مقياس DGA. مثال: text-md (16px) يجب أن يستخدم ارتفاع سطر 24px (1.5)."
     },
     {
       "id": "DGA-TYP-004",
       "category": "Typography",
       "severity": "Warning",
-      "title": "Invalid Font Weight",
-      "description": "Font weight used is not one of the four DGA-approved weights (400, 500, 600, 700).",
+      "title": "وزن خط غير صالح",
+      "description": "وزن الخط المستخدم ليس أحد الأوزان الأربعة المعتمدة من DGA (400، 500، 600، 700).",
       "detection_visual": "Text appears thinner (300/light) or different from the four standard DGA weights.",
       "detection_code": "Check computed font-weight. Must be one of: 400 (Regular), 500 (Medium), 600 (Semibold), 700 (Bold).",
       "expected": "One of: 400, 500, 600, 700",
-      "recommendation": "Remove font-weight: 300, 100, 800, 900 usage. Map to nearest DGA weight."
+      "recommendation": "أزل استخدام font-weight: 300 أو 100 أو 800 أو 900. طابقه مع أقرب وزن معتمد من DGA."
     },
     {
       "id": "DGA-TYP-005",
       "category": "Typography",
       "severity": "Warning",
-      "title": "Display Text Missing Negative Tracking",
-      "description": "Display-size text (24px+) does not have the required -2% letter-spacing.",
+      "title": "نص كبير بلا تباعد سالب",
+      "description": "النص كبير الحجم (24px فأكثر) لا يحتوي على تباعد أحرف سالب (-2%) المطلوب.",
       "detection_visual": "Large headings look slightly too spread out compared to DGA reference.",
       "detection_code": "For text ≥ 24px (display-xs and above), check if letter-spacing is approximately -0.02em.",
       "expected": "letter-spacing: -0.02em for text ≥ 30px; 0 for text ≤ 24px",
-      "recommendation": "Add letter-spacing: -0.02em to all display-level headings (30px and above). Display-xs (24px) and below should have normal tracking."
+      "recommendation": "أضف letter-spacing: -0.02em لكل العناوين من نوع display (30px فأكثر). الأحجام display-xs (24px) وما دونها يجب أن يبقى تباعدها طبيعيًا."
     },
     {
       "id": "DGA-CLR-001",
       "category": "Colors",
       "severity": "Error",
-      "title": "Color Not From DGA Palette",
-      "description": "An element uses a color that doesn't exist in any DGA palette (neutral, primary SA, gold, lavender, or semantic).",
+      "title": "لون خارج باليتة DGA",
+      "description": "عنصر يستخدم لونًا غير موجود في أي من باليتات DGA (المحايدة، الأخضر السعودي الأساسي، الذهبي، البنفسجي، أو الدلالية).",
       "detection_visual": "A color appears that doesn't match the green/gray/gold tones of the DGA system.",
       "detection_code": "Extract all used colors (text, background, border). Compare against the full DGA palette hex values.",
       "expected": "All colors from DGA palettes only",
-      "recommendation": "Replace with the nearest DGA palette color. Use CSS custom properties mapped to DGA tokens (e.g., --color-sa-600: #1B8354)."
+      "recommendation": "استبدله بأقرب لون من باليتة DGA. استخدم متغيرات CSS مربوطة بتوكنز DGA (مثل --color-sa-600: #1B8354)."
     },
     {
       "id": "DGA-CLR-002",
       "category": "Colors",
       "severity": "Error",
-      "title": "Wrong Semantic Color Usage",
-      "description": "Semantic colors used for wrong purpose — e.g., error color (#D92D20) used for non-error content, or success color used for warnings.",
+      "title": "استخدام خاطئ للألوان الدلالية",
+      "description": "الألوان الدلالية مستخدمة لغرض خاطئ — مثلاً لون الخطأ (#D92D20) لمحتوى غير خطأ، أو لون النجاح لتحذيرات.",
       "detection_visual": "Red used for non-error elements. Green used for warnings. Blue used for success messages.",
       "detection_code": "Map semantic color usage to context: Error palette → error states only, Warning → caution only, Success → confirmation only, Info → informational only.",
       "expected": "Error=red, Warning=yellow, Success=green, Info=blue",
-      "recommendation": "Ensure semantic colors are used exclusively for their intended purpose. Error 600 (#D92D20) for errors, Warning 600 (#DC6803) for warnings, Success 600 (#079455) for success, Info 600 (#1570EF) for info."
+      "recommendation": "تأكد من استخدام الألوان الدلالية لغرضها المخصص حصرًا: أحمر الخطأ 600 (#D92D20) للأخطاء، أصفر التحذير 600 (#DC6803) للتحذيرات، أخضر النجاح 600 (#079455) للنجاح، أزرق المعلومات 600 (#1570EF) للمعلومات."
     },
     {
       "id": "DGA-CLR-003",
       "category": "Colors",
       "severity": "Error",
-      "title": "Text Color Not From DGA Text Palette",
-      "description": "Text uses a color not defined in the DGA text color system for its context (light/dark background).",
+      "title": "لون نص خارج باليتة نصوص DGA",
+      "description": "النص يستخدم لونًا غير معرّف في نظام ألوان النصوص لـ DGA حسب سياقه (خلفية فاتحة/داكنة).",
       "detection_visual": "Text color doesn't match the gray-950/700/600 for light backgrounds or white/70%/60% for dark backgrounds.",
       "detection_code": "On light bg: primary text must be #0D121C, secondary #384250, tertiary #4D5761. On dark bg: primary #FFFFFF, secondary rgba(255,255,255,0.7), tertiary rgba(255,255,255,0.6).",
       "expected": "DGA text color tokens",
-      "recommendation": "Map all text colors to DGA text palette tokens. Use --text-primary, --text-secondary, --text-tertiary variables."
+      "recommendation": "طابق كل ألوان النصوص مع توكنز باليتة نصوص DGA. استخدم متغيرات --text-primary، --text-secondary، --text-tertiary."
     },
     {
       "id": "DGA-CLR-004",
       "category": "Colors",
       "severity": "Warning",
-      "title": "Gradient Not From DGA Definitions",
-      "description": "A gradient is used that doesn't match any of the 6 DGA-defined gradient combinations.",
+      "title": "تدرج لوني غير مطابق لتعريفات DGA",
+      "description": "التدرج اللوني المستخدم لا يطابق أيًا من التركيبات الست المعتمدة من DGA.",
       "detection_visual": "A green gradient that doesn't match the specific SA-600→SA-500 or other defined pairs.",
       "detection_code": "Extract gradient stops and angles. Compare against the 6 defined DGA gradients.",
       "expected": "One of 6 DGA gradient definitions",
-      "recommendation": "Use only DGA-defined gradients. The primary gradient is SA-600 (#1B8354) → SA-500 (#25935F) at 90°."
+      "recommendation": "استخدم فقط التدرجات المعرّفة من DGA. التدرج الأساسي هو SA-600 (#1B8354) إلى SA-500 (#25935F) بزاوية 90 درجة."
     },
     {
       "id": "DGA-SPC-001",
       "category": "Spacing",
       "severity": "Error",
-      "title": "Spacing Off 4px Grid",
-      "description": "Margin, padding, or gap values are not multiples of the 4px base unit.",
+      "title": "مسافات خارج شبكة 4px",
+      "description": "قيم الهوامش (margin) أو الحشو (padding) أو الفراغات (gap) ليست من مضاعفات وحدة الأساس 4px.",
       "detection_visual": "Uneven visual rhythm. Elements don't align to a consistent grid.",
       "detection_code": "Extract margin, padding, gap values. Check if each is divisible by 4. Exception: 2px (spacing-xxs) and 6px (spacing-sm) are allowed.",
       "expected": "All spacing values from DGA spacing scale (multiples of 4px, plus 2px and 6px)",
-      "recommendation": "Round spacing values to nearest DGA token. Use spacing-md (8px) instead of 7px or 9px."
+      "recommendation": "قرّب قيم المسافات لأقرب توكن من DGA. استخدم spacing-md (8px) بدل 7px أو 9px."
     },
     {
       "id": "DGA-SPC-002",
       "category": "Spacing",
       "severity": "Warning",
-      "title": "Container Padding Wrong",
-      "description": "Container/page padding doesn't match DGA spec: 16px on mobile, 32px on desktop.",
+      "title": "حشو الحاوية غير صحيح",
+      "description": "حشو الحاوية/الصفحة لا يطابق مواصفة DGA: 16px على الجوال، 32px على سطح المكتب.",
       "detection_visual": "Content appears too close to screen edge (mobile) or has inconsistent outer padding.",
       "detection_code": "Measure main container horizontal padding. Mobile (≤768px): should be 16px. Desktop (>768px): should be 32px.",
       "expected": "Mobile: 16px, Desktop: 32px",
-      "recommendation": "Set container padding using DGA tokens: container-padding-mobile (16px) and container-padding-desktop (32px)."
+      "recommendation": "اضبط حشو الحاوية باستخدام توكنز DGA: container-padding-mobile (16px) وcontainer-padding-desktop (32px)."
     },
     {
       "id": "DGA-SPC-003",
       "category": "Spacing",
       "severity": "Warning",
-      "title": "Container Max-Width Exceeded",
-      "description": "Content area exceeds the DGA maximum container width of 1280px.",
+      "title": "تجاوز أقصى عرض للحاوية",
+      "description": "منطقة المحتوى تتجاوز أقصى عرض حاوية معتمد من DGA وهو 1280px.",
       "detection_visual": "Content stretches beyond comfortable reading width on large screens.",
       "detection_code": "Measure max-width of main content container. Must not exceed 1280px.",
       "expected": "max-width: 1280px",
-      "recommendation": "Set max-width: 1280px (80rem) on the main content container. Center with margin: 0 auto."
+      "recommendation": "اضبط max-width: 1280px (80rem) على حاوية المحتوى الرئيسية، وتوسيطها بـ margin: 0 auto."
     },
     {
       "id": "DGA-SPC-004",
       "category": "Spacing",
       "severity": "Warning",
-      "title": "Paragraph Width Exceeds Maximum",
-      "description": "Paragraph text width exceeds the DGA maximum of 720px, harming readability.",
+      "title": "عرض الفقرة يتجاوز الحد الأقصى",
+      "description": "عرض نص الفقرة يتجاوز الحد الأقصى المعتمد من DGA وهو 720px، مما يضر بسهولة القراءة.",
       "detection_visual": "Long lines of body text that are hard to track from end to beginning of next line.",
       "detection_code": "Measure max-width of paragraph elements. Should not exceed 720px.",
       "expected": "max-width: 720px for paragraph text",
-      "recommendation": "Set max-width: 720px (45rem) on paragraph containers. This is the DGA paragraph-max-width token."
+      "recommendation": "اضبط max-width: 720px (45rem) على حاويات الفقرات. هذا هو توكن paragraph-max-width المعتمد من DGA."
     },
     {
       "id": "DGA-RAD-001",
       "category": "Radius",
       "severity": "Warning",
-      "title": "Border Radius Not From DGA Scale",
-      "description": "An element uses a border-radius value not in the DGA radius scale (0, 2, 4, 8, 16, 24, 9999px).",
+      "title": "زوايا خارج مقياس DGA",
+      "description": "عنصر يستخدم قيمة انحناء زوايا (border-radius) غير موجودة في مقياس DGA (0، 2، 4، 8، 16، 24، 9999 بكسل).",
       "detection_visual": "Rounded corners that don't match the consistent rounding across DGA reference pages.",
       "detection_code": "Extract computed border-radius. Must be one of: 0, 2, 4, 8, 16, 24, or 9999 (full/pill).",
       "expected": "One of: 0px, 2px, 4px, 8px, 16px, 24px, 9999px",
-      "recommendation": "Map border-radius to nearest DGA token. Use radius-md (8px) for standard components, radius-lg (16px) for cards, radius-full for pills/avatars."
+      "recommendation": "طابق قيمة الزوايا مع أقرب توكن من DGA. استخدم radius-md (8px) للمكوّنات القياسية، radius-lg (16px) للبطاقات، radius-full للأزرار الدائرية/الصور الرمزية."
     },
     {
       "id": "DGA-SHD-001",
       "category": "Shadows",
       "severity": "Warning",
-      "title": "Shadow Not From DGA Elevation Scale",
-      "description": "Box-shadow values don't match any of the 7 DGA shadow definitions.",
+      "title": "ظل خارج مقياس ارتفاع DGA",
+      "description": "قيم الظل (box-shadow) لا تطابق أيًا من تعريفات الظل السبعة المعتمدة من DGA.",
       "detection_visual": "Shadow appears different from the subtle DGA elevation style — too dark, too wide, or wrong angle.",
       "detection_code": "Parse box-shadow CSS. Compare against DGA shadow tokens (xs through 3xl).",
       "expected": "One of: shadow-xs, shadow-sm, shadow-md, shadow-lg, shadow-xl, shadow-2xl, shadow-3xl",
-      "recommendation": "Replace custom shadows with DGA shadow tokens. Shadow color must always be #101828 at specified opacity. Avoid colored shadows."
+      "recommendation": "استبدل الظلال المخصصة بتوكنز ظل DGA. يجب أن يكون لون الظل دائمًا #101828 بالشفافية المحددة. تجنّب الظلال الملوّنة."
     },
     {
       "id": "DGA-SHD-002",
       "category": "Shadows",
       "severity": "Info",
-      "title": "Excessive Elevation Usage",
-      "description": "Too many shadow levels used on a single page, or heavy shadows (2xl, 3xl) used on small elements.",
+      "title": "إفراط في استخدام الارتفاع الظلي",
+      "description": "استخدام مستويات ظل كثيرة جدًا في صفحة واحدة، أو استخدام ظلال ثقيلة (2xl، 3xl) على عناصر صغيرة.",
       "detection_visual": "Page feels overly layered with excessive shadow depth. Small elements cast unrealistically large shadows.",
       "detection_code": "Count distinct shadow levels per page. Flag if >3 levels or if shadow-2xl/3xl used on elements <200px.",
       "expected": "2-3 shadow levels per page, appropriate to element size",
-      "recommendation": "DGA recommends subtle elevation. Use shadow-xs or shadow-sm for most components. Reserve shadow-lg+ for modals and overlays."
+      "recommendation": "توصي DGA بارتفاع ظلي خفيف. استخدم shadow-xs أو shadow-sm لمعظم المكوّنات، واحتفظ بـ shadow-lg فأعلى للنوافذ المنبثقة والطبقات العلوية."
     },
     {
       "id": "DGA-GRD-001",
       "category": "Grid & Layout",
       "severity": "Error",
-      "title": "Wrong Grid Column Count",
-      "description": "Page layout doesn't use the DGA grid structure: 12 columns desktop, 6 tablet, 4 mobile.",
+      "title": "عدد أعمدة الشبكة غير صحيح",
+      "description": "تخطيط الصفحة لا يستخدم بنية شبكة DGA: 12 عمودًا لسطح المكتب، 6 للوحي، 4 للجوال.",
       "detection_visual": "Content doesn't align to a visible column structure. Elements appear off-grid.",
       "detection_code": "Inspect grid or flexbox layout. Desktop should show 12-column alignment. Tablet (≤768px): 6 columns. Mobile (≤375px): 4 columns.",
       "expected": "Desktop: 12 col, Tablet: 6 col, Mobile: 4 col",
-      "recommendation": "Implement the DGA grid system using CSS Grid with 12 columns and 32px gutters (16px on mobile)."
+      "recommendation": "طبّق نظام شبكة DGA باستخدام CSS Grid بـ 12 عمودًا وفراغات 32px (16px على الجوال)."
     },
     {
       "id": "DGA-GRD-002",
       "category": "Grid & Layout",
       "severity": "Warning",
-      "title": "Wrong Grid Gutter Size",
-      "description": "Grid gutters don't match DGA spec: 32px on desktop/tablet, 16px on mobile.",
+      "title": "حجم فراغ الشبكة غير صحيح",
+      "description": "فراغات الشبكة لا تطابق مواصفة DGA: 32px على سطح المكتب/اللوحي، 16px على الجوال.",
       "detection_visual": "Columns appear too close together or too far apart compared to DGA reference.",
       "detection_code": "Measure gap/gutter between grid columns. Desktop/Tablet: 32px. Mobile: 16px.",
       "expected": "Desktop/Tablet: 32px, Mobile: 16px",
-      "recommendation": "Set grid column-gap to 32px for desktop and tablet, 16px for mobile breakpoint."
+      "recommendation": "اضبط column-gap للشبكة على 32px لسطح المكتب واللوحي، و16px عند نقطة انكسار الجوال."
     },
     {
       "id": "DGA-GRD-003",
       "category": "Grid & Layout",
       "severity": "Error",
-      "title": "Wrong Breakpoint Values",
-      "description": "Responsive breakpoints don't align with DGA definitions: desktop 1280px, tablet 768px, mobile 375px.",
+      "title": "قيم نقاط الانكسار غير صحيحة",
+      "description": "نقاط الانكسار المتجاوبة لا تطابق تعريفات DGA: سطح المكتب 1280px، اللوحي 768px، الجوال 375px.",
       "detection_visual": "Layout breaks or shifts at unexpected viewport widths.",
       "detection_code": "Check CSS media queries for breakpoint values. Should use 1280px, 768px, and 375px.",
       "expected": "Breakpoints: 375px (mobile), 768px (tablet), 1280px (desktop)",
-      "recommendation": "Use DGA breakpoints for all media queries. Set viewport-specific styles at these exact widths."
+      "recommendation": "استخدم نقاط انكسار DGA في كل media queries. اضبط الأنماط الخاصة بكل حجم شاشة عند هذه العروض بالضبط."
     },
     {
       "id": "DGA-RTL-001",
       "category": "RTL & Localization",
       "severity": "Error",
-      "title": "Missing RTL Support",
-      "description": "Arabic content page doesn't have dir='rtl' attribute or text alignment is incorrect.",
+      "title": "دعم RTL مفقود",
+      "description": "صفحة المحتوى العربي لا تحتوي على السمة dir='rtl' أو أن محاذاة النص غير صحيحة.",
       "detection_visual": "Arabic text aligned to the left. Navigation on the left instead of right. Layout not mirrored.",
       "detection_code": "Check html or body for dir='rtl'. Verify text-align on Arabic content is 'right' or 'start'.",
       "expected": "dir='rtl' on html element for Arabic pages",
-      "recommendation": "Set dir='rtl' on the <html> element. Use CSS logical properties (margin-inline-start) instead of margin-left."
+      "recommendation": "اضبط dir='rtl' على عنصر <html>. استخدم خصائص CSS المنطقية (margin-inline-start) بدل margin-left."
     },
     {
       "id": "DGA-RTL-002",
       "category": "RTL & Localization",
       "severity": "Error",
-      "title": "Navigation Not Mirrored for RTL",
-      "description": "Navigation menu and header elements are not mirrored for Arabic RTL layout as shown in DGA templates.",
+      "title": "التنقّل غير معكوس لـ RTL",
+      "description": "قائمة التنقل وعناصر الهيدر غير معكوسة لتخطيط RTL العربي كما هو موضح في قوالب DGA.",
       "detection_visual": "Logo should be on the right, nav items flowing right-to-left. Status bar (weather, date, time, location) should be in correct RTL order.",
       "detection_code": "Check nav element flex-direction or float direction under dir='rtl'. Logo should be flex-end or right-aligned.",
       "expected": "Full RTL mirroring as per DGA home page template",
-      "recommendation": "Mirror entire navigation: logo right, menu items right-to-left, utility bar (weather/time/location) left-to-right reading order preserved."
+      "recommendation": "اعكس التنقل بالكامل: الشعار لليمين، عناصر القائمة من اليمين لليسار، مع الحفاظ على ترتيب قراءة شريط الأدوات (الطقس/الوقت/الموقع) من اليسار لليمين."
     },
     {
       "id": "DGA-RTL-003",
       "category": "RTL & Localization",
       "severity": "Warning",
-      "title": "Form Labels Not RTL Aligned",
-      "description": "Form labels and inputs are not right-aligned for Arabic as shown in DGA Contact Us template.",
+      "title": "تسميات النماذج غير محاذاة لـ RTL",
+      "description": "تسميات النماذج وحقول الإدخال غير محاذاة لليمين للعربية كما هو موضح في قالب اتصل بنا من DGA.",
       "detection_visual": "Form labels appear on the left, inputs align left — not matching the DGA contact form template.",
       "detection_code": "Check form label text-align and input alignment under RTL context.",
       "expected": "Labels right-aligned, inputs right-aligned, placeholders right-aligned",
-      "recommendation": "Ensure all form elements respect dir='rtl'. Labels should be right-aligned above or beside their inputs."
+      "recommendation": "تأكد من احترام كل عناصر النموذج لـ dir='rtl'. يجب أن تكون التسميات محاذاة لليمين أعلى أو بجانب حقولها."
     },
     {
       "id": "DGA-TPL-001",
       "category": "Template Compliance",
       "severity": "Error",
-      "title": "Missing Header Status Bar",
-      "description": "DGA home page template requires a top status bar showing weather, date, time, and location (city).",
+      "title": "شريط حالة الهيدر مفقود",
+      "description": "قالب الصفحة الرئيسية لـ DGA يتطلب شريط حالة علوي يعرض الطقس والتاريخ والوقت والموقع (المدينة).",
       "detection_visual": "Page lacks the top utility bar seen in the DGA home page template above the main navigation.",
       "detection_code": "Check for a top bar element containing weather, date, time, and location data.",
       "expected": "Top bar with: weather icon + condition, date, time, location (city name)",
-      "recommendation": "Add a header status bar matching the DGA template: [weather icon] [condition] [date] [time] [location pin] [city]."
+      "recommendation": "أضف شريط حالة بالهيدر مطابق لقالب DGA: [أيقونة الطقس] [الحالة] [التاريخ] [الوقت] [دبوس الموقع] [المدينة]."
     },
     {
       "id": "DGA-TPL-002",
       "category": "Template Compliance",
       "severity": "Warning",
-      "title": "Missing Hero Section Pattern",
-      "description": "DGA home page template uses a hero section with green gradient background, heading text on the right, CTA button, and image/illustration on the left.",
+      "title": "نمط قسم الهيرو مفقود",
+      "description": "قالب الصفحة الرئيسية لـ DGA يستخدم قسم هيرو بخلفية تدرج أخضر، نص عنوان لليمين، زر دعوة لإجراء، وصورة/رسم توضيحي لليسار.",
       "detection_visual": "Home page lacks the characteristic green hero banner with right-aligned RTL heading and CTA.",
       "detection_code": "Check for hero/banner section with DGA green gradient background (SA-600 to SA-800 range).",
       "expected": "Green gradient hero with RTL heading + CTA + left-side visual",
-      "recommendation": "Implement the hero section per DGA template: green gradient background, right-aligned heading and description, primary CTA button, illustration/image on the left side."
+      "recommendation": "طبّق قسم الهيرو حسب قالب DGA: خلفية تدرج أخضر، عنوان ووصف محاذيين لليمين، زر دعوة رئيسي، ورسم/صورة توضيحية على الجانب الأيسر."
     },
     {
       "id": "DGA-TPL-003",
       "category": "Template Compliance",
       "severity": "Warning",
-      "title": "Contact Form Missing Required Pattern",
-      "description": "Contact form doesn't follow DGA contact page template: breadcrumbs, 2-column name fields, email + phone row, subject + category, textarea, file upload, submit button.",
+      "title": "نمط نموذج التواصل مفقود",
+      "description": "نموذج التواصل لا يتبع قالب صفحة التواصل من DGA: مسار تصفح (breadcrumbs)، حقول اسم بعمودين، صف بريد إلكتروني وهاتف، موضوع وتصنيف، منطقة نص، رفع ملف، زر إرسال.",
       "detection_visual": "Contact form layout doesn't match the DGA reference with its specific field arrangement.",
       "detection_code": "Check form structure for: breadcrumb nav, first/last name side-by-side, email/phone side-by-side, subject/category, textarea, file upload, submit CTA.",
       "expected": "DGA contact form field layout and order",
-      "recommendation": "Structure the contact form per DGA template: breadcrumbs at top, 2-column layout for name and contact fields, full-width textarea, file upload component, primary green submit button."
+      "recommendation": "رتّب نموذج التواصل حسب قالب DGA: مسار تصفح أعلى النموذج، تخطيط بعمودين لحقول الاسم والتواصل، منطقة نص بعرض كامل، مكوّن رفع ملف، وزر إرسال أخضر رئيسي."
     },
     {
       "id": "DGA-ACC-001",
       "category": "Accessibility",
       "severity": "Error",
-      "title": "Text Contrast Below DGA Minimum",
-      "description": "Text doesn't meet the DGA-specified WCAG contrast requirements: 4.5:1 for small text (<24px), 3:1 for large text (≥24px).",
+      "title": "تباين نص أقل من الحد الأدنى لـ DGA",
+      "description": "النص لا يحقق متطلبات تباين WCAG المحددة من DGA: 4.5:1 للنصوص الصغيرة (أقل من 24px)، 3:1 للنصوص الكبيرة (24px فأكثر).",
       "detection_visual": "Text appears hard to read against its background. Light text on medium backgrounds.",
       "detection_code": "Calculate contrast ratio using DGA-specified thresholds: small text (<24px) needs 4.5:1, large text (≥24px) needs 3:1.",
       "expected": "Small text: ≥4.5:1, Large text: ≥3:1",
-      "recommendation": "Use DGA text color tokens which are pre-tested for contrast: primary text (#0D121C) on light backgrounds gives 15.4:1 ratio."
+      "recommendation": "استخدم توكنز ألوان نصوص DGA المختبرة مسبقًا للتباين: النص الأساسي (#0D121C) على خلفيات فاتحة يعطي نسبة تباين 15.4:1."
     },
     {
       "id": "DGA-ACC-002",
       "category": "Accessibility",
       "severity": "Error",
-      "title": "UI Component Contrast Below 3:1",
-      "description": "Interactive UI components (buttons, inputs, icons) don't meet the DGA-required 3:1 contrast ratio against adjacent colors.",
+      "title": "تباين مكوّن واجهة أقل من 3:1",
+      "description": "مكوّنات الواجهة التفاعلية (أزرار، حقول، أيقونات) لا تحقق نسبة تباين 3:1 المطلوبة من DGA مقابل الألوان المجاورة.",
       "detection_visual": "Input borders, icon buttons, or interactive elements are hard to distinguish from background.",
       "detection_code": "Calculate contrast of UI component boundaries against adjacent background. Must be ≥3:1.",
       "expected": "UI components: ≥3:1 contrast ratio",
-      "recommendation": "Use DGA palette colors that meet 3:1 minimum. Gray-400 (#9DA4AE) on white gives 3.2:1. For stronger contrast, use Gray-500+ (#6C737F)."
+      "recommendation": "استخدم ألوان باليتة DGA التي تحقق الحد الأدنى 3:1. Gray-400 (#9DA4AE) على أبيض يعطي 3.2:1. لتباين أقوى استخدم Gray-500 (#6C737F) فأعلى."
     }
   ]
 }

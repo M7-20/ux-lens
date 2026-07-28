@@ -204,7 +204,7 @@ function Results() {
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="flex items-center gap-2 text-base font-bold text-ink">
                   <span className="h-6 w-1.5 rounded-full bg-gold" />
-                  تفاصيل التدقيق حسب معايير (DGA) — {audit.rules.length} معيار
+                  تفاصيل التدقيق حسب معايير (DGA) — 28 معيار
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {([
