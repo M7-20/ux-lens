@@ -47,7 +47,7 @@ export function ScoreGauge({ value, grade, size = 220, className }: GaugeProps) 
           <div className="font-sans text-5xl font-black tabular-nums text-brand">
             {clamped}<span className="text-2xl text-brand/60">%</span>
           </div>
-          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
+          <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
             درجة {grade}
           </div>
         </div>

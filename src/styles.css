@@ -47,31 +47,31 @@
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 0.375rem; /* رصين ومؤسسي — أقصى انحناء ~6px، لا حواف دائرية كبيرة */
 
-  /* تدقيق الامتثال الرقمي · modern teal palette */
-  --background: oklch(0.97 0.01 195);         /* cool mint-teal off-white */
-  --surface: oklch(1 0 0);                    /* #FFFFFF */
-  --ink: oklch(0.24 0.03 200);                /* deep teal-slate */
-  --foreground: oklch(0.24 0.03 200);
-  --muted: oklch(0.96 0.008 195);
-  --muted-foreground: oklch(0.52 0.02 205);
-  --hairline: oklch(0.92 0.01 195);
-  --border: oklch(0.92 0.01 195);
-  --input: oklch(0.92 0.01 195);
+  /* تدقيق الامتثال الرقمي · هوية حكومية رسمية: أبيض/رمادي محايد + أخضر محدود كتمييز */
+  --background: #F9FAFB;
+  --surface: #FFFFFF;
+  --ink: #1F2937;
+  --foreground: #1F2937;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --hairline: #E5E7EB;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
 
-  --brand: oklch(40.97% 0.10803 151.488);
-  --brand-deep: oklch(36.577% 0.09236 153.314);         /* deeper teal */
-  --brand-foreground: oklch(0.99 0 0);
-  --gold: oklch(0.75 0.08 85);                /* soft gold accent */
-  --panel: oklch(0.30 0.05 205);              /* dark teal panel */
-  --panel-foreground: oklch(0.97 0.01 195);
+  --brand: #15734A;
+  --brand-deep: #0F5C3B;
+  --brand-foreground: #FFFFFF;
+  --gold: #6B7280; /* لم يعد لونًا زخرفيًا — أي استخدام متبقٍّ يرث رمادي محايد بدل الذهبي */
+  --panel: #111827;
+  --panel-foreground: #F9FAFB;
 
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.95 0.012 195);
+  --secondary: #F3F4F6;
   --secondary-foreground: var(--ink);
-  --accent: oklch(0.94 0.03 195);
+  --accent: #F3F4F6;
   --accent-foreground: var(--ink);
 
   --card: var(--surface);
@@ -79,11 +79,11 @@
   --popover: var(--surface);
   --popover-foreground: var(--ink);
 
-  --pass: oklch(0.60 0.13 165);
-  --warn: oklch(0.75 0.13 80);
-  --fail: oklch(0.62 0.19 25);
+  --pass: var(--brand);
+  --warn: #B45309;
+  --fail: #B91C1C;
   --destructive: var(--fail);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive-foreground: #FFFFFF;
   --ring: var(--brand);
 }
 
@@ -92,9 +92,6 @@
   html { direction: rtl; }
   body {
     background-color: var(--color-background);
-    background-image:
-      radial-gradient(900px 500px at 8% 108%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 55%);
-    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
@@ -104,12 +101,10 @@
 
 @utility ltr { direction: ltr; unicode-bidi: isolate; }
 @utility glass {
-  background: color-mix(in oklab, white 78%, transparent);
-  backdrop-filter: blur(20px) saturate(140%);
-  border: 1px solid color-mix(in oklab, white 55%, transparent);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
 }
 @utility glass-soft {
-  background: color-mix(in oklab, white 55%, transparent);
-  backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid color-mix(in oklab, white 60%, transparent);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
 }

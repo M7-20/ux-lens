@@ -69,7 +69,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "Accessibility": "إمكانية الوصول",
 };
 
-const AUDIT_SERVICE_URL = "http://localhost:8000";
+const AUDIT_SERVICE_URL = "https://clearing-coupons-vitamin-moving.trycloudflare.com";
 
 // The real audit takes 1-2 minutes (Playwright capture + Gemini visual scan).
 // "/scanning" triggers the real call and "/results" re-requests the same url —

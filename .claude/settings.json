@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://localhost:8000/audit -H \"Content-Type: application/json\" -d '{\"url\":\"https://naama.sa\"}' -o /tmp/naama_v3.json -w \"HTTP:%{http_code} TIME:%{time_total}s\\\\n\")",
+      "Bash(PYTHONIOENCODING=utf-8 ./venv/Scripts/python.exe -c ' *)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code}\\\\n\" http://localhost:8080/results?url=https://naama.sa)",
+      "Bash(curl -s -o /dev/null -w \"Backend\\(/stats\\): %{http_code}\\\\n\" http://localhost:8000/stats)"
+    ]
+  }
+}

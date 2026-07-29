@@ -109,11 +109,11 @@ function Results() {
       <div className="min-h-screen">
         <AppHeader />
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-24 text-center">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-fail/10 text-fail">
+          <div className="grid h-12 w-12 place-items-center rounded-md bg-fail/10 text-fail">
             <AlertTriangle className="h-6 w-6" />
           </div>
           <p className="text-sm text-ink/80">{error}</p>
-          <Button asChild className="rounded-xl bg-gradient-to-br from-brand to-brand-deep text-brand-foreground shadow-lg shadow-brand/20 hover:opacity-95">
+          <Button asChild className="rounded-md bg-brand text-brand-foreground hover:bg-brand-deep">
             <Link to="/">فحص جديد</Link>
           </Button>
         </div>
@@ -146,7 +146,7 @@ function Results() {
         {/* Header */}
         <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-[11px] font-bold text-brand">
+            <div className="inline-flex items-center gap-2 rounded-md border border-hairline bg-muted px-3 py-1 text-[11px] font-medium text-muted-foreground">
               تقرير التدقيق الرقمي
             </div>
             <div className="ltr mt-2 truncate font-mono text-lg font-semibold text-ink">{audit.url}</div>
@@ -156,11 +156,11 @@ function Results() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline" className="rounded-xl border-hairline bg-white/70 backdrop-blur">
+            <Button asChild variant="outline" className="rounded-md border-hairline bg-white">
               <Link to="/"><RefreshCw className="ml-1 h-4 w-4" />فحص جديد</Link>
             </Button>
             <Button
-              className="rounded-xl bg-gradient-to-br from-brand to-brand-deep text-brand-foreground shadow-lg shadow-brand/20 hover:opacity-95"
+              className="rounded-md bg-brand text-brand-foreground hover:bg-brand-deep"
               onClick={() => window.print()}
             >
               <Download className="ml-1 h-4 w-4" />تصدير PDF
@@ -170,9 +170,8 @@ function Results() {
 
         {/* Score + summary panel */}
         <section className="grid gap-6 md:grid-cols-12">
-          <div className="glass relative overflow-hidden rounded-3xl p-8 shadow-xl shadow-brand/5 md:col-span-5">
-            <div className="absolute -top-16 -left-16 h-40 w-40 rounded-full bg-brand/10 blur-2xl" />
-            <div className="relative flex flex-col items-center text-center">
+          <div className="glass rounded-lg p-8 md:col-span-5">
+            <div className="flex flex-col items-center text-center">
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 مؤشر الالتزام الكلي
               </div>
@@ -185,14 +184,14 @@ function Results() {
                 {" · "}شاملاً التقديرات البصرية:{" "}
                 <span dir="ltr" className="inline-block font-mono font-bold tabular-nums text-ink">{audit.scoreEstimated}%</span>
               </div>
-              <h2 className="mt-4 text-lg font-black text-ink">{gradeLabel}</h2>
+              <h2 className="mt-4 text-lg font-semibold text-ink">{gradeLabel}</h2>
               <div className="mt-6 grid w-full grid-cols-3 gap-2">
                 <Tally label="مطابق" count={tally.pass} tint="var(--pass)" />
                 <Tally label="تحسين" count={tally.warn} tint="var(--warn)" />
                 <Tally label="مخالف" count={tally.fail} tint="var(--fail)" />
               </div>
               {tally.manual_review > 0 && (
-                <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300/60 bg-slate-100/70 px-3 py-1.5 text-xs font-medium text-slate-500">
+                <div className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-hairline bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
                   <HelpCircle className="h-3.5 w-3.5" />
                   {tally.manual_review} تحقق يدوي — غير محسوم، مستثنى من النسبة
                 </div>
@@ -200,16 +199,15 @@ function Results() {
             </div>
           </div>
 
-          <div className="glass-soft rounded-3xl p-6 shadow-xl shadow-brand/5 md:col-span-7">
-            <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-ink">
-              <span className="h-5 w-1 rounded-full bg-gold" />
+          <div className="glass-soft rounded-lg p-6 md:col-span-7">
+            <h3 className="mb-4 text-sm font-semibold text-ink">
               التقييم حسب الفئة
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               {categoryStats.map((c) => (
-                <div key={c.category} className="rounded-2xl border border-white/60 bg-white/70 p-4">
+                <div key={c.category} className="rounded-md border border-hairline bg-white p-4">
                   <div className="flex items-baseline justify-between">
-                    <div className="text-sm font-bold text-ink">{CATEGORY_LABELS[c.category]}</div>
+                    <div className="text-sm font-semibold text-ink">{CATEGORY_LABELS[c.category]}</div>
                     <div className="font-mono text-sm font-bold tabular-nums text-brand">
                       {c.showAsFraction ? `${c.rulesPassed}/${c.total} معيار` : `${c.pct}%`}
                     </div>
@@ -234,10 +232,9 @@ function Results() {
         {/* Results (right) + screenshots (left) */}
         <section className="mt-10 grid items-start gap-6 md:grid-cols-12">
           <div className="md:col-span-7">
-            <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
+            <div className="glass rounded-lg p-6">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-base font-bold text-ink">
-                  <span className="h-6 w-1.5 rounded-full bg-gold" />
+                <h3 className="text-base font-semibold text-ink">
                   تفاصيل التدقيق حسب معايير (DGA) — {audit.rules.length} معيار
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -252,10 +249,10 @@ function Results() {
                       key={c.k}
                       onClick={() => setFilter(c.k as any)}
                       className={cn(
-                        "rounded-full border px-3 py-1 text-xs font-medium transition",
+                        "rounded-md border px-3 py-1 text-xs font-medium transition",
                         filter === c.k
-                          ? "border-brand bg-brand text-brand-foreground shadow-md shadow-brand/20"
-                          : "border-hairline bg-white/70 text-muted-foreground hover:border-brand/40 hover:text-brand"
+                          ? "border-brand bg-brand text-brand-foreground"
+                          : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
                       )}
                     >
                       {c.label} <span className="font-mono tabular-nums">({c.n})</span>
@@ -286,7 +283,7 @@ function Results() {
           </div>
         </section>
 
-        <footer className="mt-16 border-t border-white/60 pt-6 text-center text-xs text-muted-foreground">
+        <footer className="mt-16 border-t border-hairline pt-6 text-center text-xs text-muted-foreground">
           تدقيق الامتثال الرقمي · وزارة البيئة والمياه والزراعة · معايير هيئة الحكومة الرقمية
         </footer>
       </main>
@@ -296,18 +293,18 @@ function Results() {
 
 function Tally({ label, count, tint }: { label: string; count: number; tint: string }) {
   return (
-    <div className="rounded-2xl border border-white/60 bg-white/70 p-3">
+    <div className="rounded-md border border-hairline bg-white p-3">
       <div className="flex items-center justify-center gap-1.5">
         <span className="h-2 w-2 rounded-full" style={{ background: tint }} />
         <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       </div>
-      <div className="mt-1 text-center font-mono text-2xl font-black tabular-nums text-ink">{count}</div>
+      <div className="mt-1 text-center font-mono text-2xl font-bold tabular-nums text-ink">{count}</div>
     </div>
   );
 }
 
 function StatusIcon({ status }: { status: Status }) {
-  const base = "grid h-10 w-10 shrink-0 place-items-center rounded-xl";
+  const base = "grid h-10 w-10 shrink-0 place-items-center rounded-md";
   if (status === "pass") return <div className={cn(base, "bg-pass/10 text-pass")}><Check className="h-5 w-5" /></div>;
   if (status === "warn") return <div className={cn(base, "bg-warn/10 text-warn")}><AlertTriangle className="h-5 w-5" /></div>;
   if (status === "manual_review") return <div className={cn(base, "bg-slate-400/10 text-slate-500")}><HelpCircle className="h-5 w-5" /></div>;
@@ -330,40 +327,40 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border bg-white/70 shadow-sm transition",
-        active ? "border-brand ring-2 ring-brand/30" : "border-white/60"
+        "overflow-hidden rounded-md border bg-white transition",
+        active ? "border-brand ring-1 ring-brand/30" : "border-hairline"
       )}
     >
       <button
         onClick={() => { setOpen((o) => !o); onActivate(rule); }}
-        className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-white md:px-5"
+        className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-muted md:px-5"
         aria-expanded={open}
       >
         <StatusIcon status={rule.status} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-sm font-bold text-ink">
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
             <span className="truncate">{displayTitle}</span>
-            {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" aria-label="محدد على الصورة" />}
+            {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="محدد على الصورة" />}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
             {CATEGORY_LABELS[rule.category]}
           </div>
         </div>
-        <span className="hidden shrink-0 rounded-lg bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
+        <span className="hidden shrink-0 rounded-md bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
           {rule.id}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="border-t border-hairline bg-white/60 px-4 py-4 md:px-5">
+        <div className="border-t border-hairline bg-muted px-4 py-4 md:px-5">
           {displayDescription ? (
             <p className="text-sm leading-relaxed text-ink/80">{displayDescription}</p>
           ) : isPass ? (
             <p className="text-sm leading-relaxed text-pass">لا توجد ملاحظات — هذا المعيار مستوفى بالكامل.</p>
           ) : null}
           {!isPass && rule.recommendation && (
-            <div className="mt-3 rounded-xl border-r-2 border-gold bg-gold/5 p-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-gold">
+            <div className="mt-3 rounded-md border-r-2 border-hairline bg-white p-3">
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية
               </div>
               <div className="text-sm text-ink/90">{rule.recommendation}</div>
@@ -372,13 +369,13 @@ function RuleRow({
           {rule.evidence && (
             <div className="mt-3">
               <div className="mb-1 text-xs text-muted-foreground">دليل تقني</div>
-              <div dir="rtl" className="overflow-x-auto rounded-lg bg-panel px-3 py-2 text-xs text-panel-foreground/90">
+              <div dir="rtl" className="overflow-x-auto rounded-md bg-panel px-3 py-2 text-xs text-panel-foreground/90">
                 {rule.evidence}
               </div>
             </div>
           )}
           {rule.region && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand">
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" />
               مكان المخالفة مؤشَّر على لقطة سطح المكتب في اللوحة المقابلة
             </div>
@@ -416,9 +413,8 @@ function ScreenshotPanel({
   const highlight = activeRule?.region && current.viewport === "desktop" ? activeRule.region : null;
 
   return (
-    <div className="glass rounded-3xl p-6 shadow-xl shadow-brand/5">
-      <h3 className="mb-4 flex items-center gap-2 text-base font-bold text-ink">
-        <span className="h-6 w-1.5 rounded-full bg-gold" />
+    <div className="glass rounded-lg p-6">
+      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-ink">
         <ImageIcon className="h-4 w-4 text-brand" />
         لقطات الصفحة الملتقطة
       </h3>
@@ -431,10 +427,10 @@ function ScreenshotPanel({
               key={s.viewport}
               onClick={() => onActiveChange(i)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+                "inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium transition",
                 active === i
-                  ? "border-brand bg-brand text-brand-foreground shadow-md shadow-brand/20"
-                  : "border-hairline bg-white/70 text-muted-foreground hover:border-brand/40 hover:text-brand"
+                  ? "border-brand bg-brand text-brand-foreground"
+                  : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -450,23 +446,23 @@ function ScreenshotPanel({
       {activeRule && (
         <div
           className={cn(
-            "mb-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition",
+            "mb-3 flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition",
             highlight
-              ? "border-gold/30 bg-gold/5 text-ink"
-              : "border-hairline bg-white/60 text-muted-foreground"
+              ? "border-fail/30 bg-fail/5 text-ink"
+              : "border-hairline bg-muted text-muted-foreground"
           )}
         >
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-gold" />
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           {highlight
             ? <span>موقع المخالفة: {activeRule.title}</span>
             : <span>حدد لقطة سطح المكتب لعرض موقع «{activeRule.title}»</span>}
         </div>
       )}
 
-      <div className="relative max-h-[70vh] w-full overflow-y-auto overscroll-contain rounded-2xl border border-white/60 shadow-sm">
+      <div className="relative max-h-[70vh] w-full overflow-y-auto overscroll-contain rounded-md border border-hairline">
       <button
         onClick={() => setPreview(current)}
-        className="group relative block w-full bg-white/70"
+        className="group relative block w-full bg-white"
       >
         <div
           className="relative w-full bg-panel/5"
@@ -476,7 +472,7 @@ function ScreenshotPanel({
             src={current.url}
             alt={`لقطة ${current.label} للموقع ${url}`}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full object-cover object-top"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
@@ -484,7 +480,7 @@ function ScreenshotPanel({
 
           {highlight && (
             <div
-              className="pointer-events-none absolute rounded-lg border-2 border-gold shadow-[0_0_0_9999px_rgba(15,23,42,0.35)] transition-all duration-300"
+              className="pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)]"
               style={{
                 left: `${highlight.x}%`,
                 top: `${highlight.y}%`,
@@ -492,12 +488,11 @@ function ScreenshotPanel({
                 height: `${highlight.height}%`,
               }}
             >
-              <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-gold text-[10px] font-black text-ink shadow">!</span>
+              <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-          <div className="absolute bottom-3 left-3 rounded-lg bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+          <div className="absolute bottom-3 left-3 rounded-md bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
             اضغط للتكبير
           </div>
         </div>
@@ -510,9 +505,9 @@ function ScreenshotPanel({
             key={s.viewport}
             onClick={() => onActiveChange(i)}
             className={cn(
-              "group relative overflow-hidden rounded-xl border bg-white/70 shadow-sm transition",
+              "group relative overflow-hidden rounded-md border bg-white transition",
               active === i
-                ? "border-brand ring-2 ring-brand/30"
+                ? "border-brand ring-1 ring-brand/30"
                 : "border-hairline hover:border-brand/40"
             )}
           >
@@ -530,7 +525,7 @@ function ScreenshotPanel({
                 }}
               />
             </div>
-            <div className="flex items-center justify-between border-t border-hairline bg-white/80 px-2 py-1 text-[10px] font-bold text-ink">
+            <div className="flex items-center justify-between border-t border-hairline bg-white px-2 py-1 text-[10px] font-bold text-ink">
               <span>{s.label}</span>
             </div>
           </button>
@@ -543,10 +538,10 @@ function ScreenshotPanel({
           onClick={() => setPreview(null)}
         >
           <div
-            className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-2xl bg-white shadow-2xl"
+            className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-md bg-white shadow-sm"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-white/95 px-4 py-2.5 backdrop-blur">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-white px-4 py-2.5">
               <div className="text-sm font-bold text-ink">{preview.label}</div>
               <button
                 onClick={() => setPreview(null)}

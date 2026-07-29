@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, Globe, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, Globe } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
@@ -41,12 +41,11 @@ function Index() {
       <AppHeader />
       <main className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-16">
         {/* Hero panel */}
-        <section className="glass rounded-3xl p-6 shadow-2xl shadow-brand/5 md:p-10">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/5 px-3 py-1 text-xs font-medium text-brand">
-            <Sparkles className="h-3.5 w-3.5" />
+        <section className="glass rounded-lg p-6 md:p-10">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-hairline bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
             أداة داخلية · وزارة البيئة والمياه والزراعة
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-ink md:text-[42px] md:leading-[1.15]">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-[42px] md:leading-[1.15]">
             فحص الامتثال الرقمي <span className="text-brand">للمواقع الحكومية</span>
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
@@ -55,7 +54,7 @@ function Index() {
 
           <form
             onSubmit={(e) => { e.preventDefault(); submit(url); }}
-            className="mt-6 rounded-2xl bg-white p-2 shadow-inner ring-1 ring-hairline"
+            className="mt-6 rounded-md bg-white p-2 ring-1 ring-hairline"
           >
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
               <div className="flex flex-1 items-center gap-3 px-4 py-2">
@@ -72,10 +71,10 @@ function Index() {
               </div>
               <button
                 type="submit"
-                className="group flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-brand to-brand-deep px-8 font-bold text-brand-foreground shadow-lg shadow-brand/25 transition hover:shadow-xl active:scale-[0.98]"
+                className="flex h-12 items-center justify-center gap-2 rounded-md bg-brand px-8 font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
               >
                 ابدأ الفحص الذكي
-                <ArrowLeft className="h-4 w-4 transition group-hover:-translate-x-0.5" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
             </div>
           </form>
@@ -87,7 +86,7 @@ function Index() {
                 key={s}
                 type="button"
                 onClick={() => { setUrl(`https://${s}`); submit(`https://${s}`); }}
-                className="ltr rounded-full border border-hairline bg-white/70 px-3 py-1 font-mono text-xs text-ink transition hover:border-brand hover:bg-brand/5 hover:text-brand"
+                className="ltr rounded-md border border-hairline bg-white px-3 py-1 font-mono text-xs text-ink transition hover:border-brand hover:text-brand"
               >
                 {s}
               </button>
@@ -97,15 +96,15 @@ function Index() {
 
         {/* Stat strip */}
         <section className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <StatCard label="المواقع المفحوصة" value={stats ? String(stats.totalAudits) : "—"} tint="brand" />
-          <StatCard label="متوسط وقت التدقيق" value={stats ? formatDuration(stats.avgDurationSec) : "—"} tint="gold" />
-          <StatCard label="معدل الامتثال" value={stats && stats.totalAudits > 0 ? `${stats.avgScore}٪` : "—"} tint="brand" />
+          <StatCard label="المواقع المفحوصة" value={stats ? String(stats.totalAudits) : "—"} />
+          <StatCard label="متوسط وقت التدقيق" value={stats ? formatDuration(stats.avgDurationSec) : "—"} />
+          <StatCard label="معدل الامتثال" value={stats && stats.totalAudits > 0 ? `${stats.avgScore}٪` : "—"} />
         </section>
 
         {/* Recent scans */}
         <section className="mt-10">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-ink">
               <Clock className="h-4 w-4 text-brand" />
               الفحوصات السابقة
             </h2>
@@ -116,10 +115,10 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/70 p-4 text-right shadow-sm backdrop-blur-md transition hover:border-brand/30 hover:bg-white hover:shadow-md"
+                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/8 font-mono text-sm font-bold text-brand transition group-hover:bg-brand group-hover:text-brand-foreground">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand/8 font-mono text-sm font-bold text-brand transition group-hover:bg-brand group-hover:text-brand-foreground">
                     {r.score}
                   </div>
                   <div className="min-w-0">
@@ -134,7 +133,7 @@ function Index() {
               </button>
             ))}
             {recent.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-hairline p-8 text-center text-sm text-muted-foreground">
+              <div className="rounded-md border border-dashed border-hairline p-8 text-center text-sm text-muted-foreground">
                 ما فيه فحوصات سابقة بعد — ابدأ أول فحص من الأعلى.
               </div>
             )}
@@ -145,22 +144,11 @@ function Index() {
   );
 }
 
-function StatCard({ label, value, tint }: { label: string; value: string; tint: "brand" | "gold" }) {
+function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="glass-soft flex items-center gap-4 rounded-2xl p-4">
-      <div
-        className="h-10 w-10 shrink-0 rounded-xl"
-        style={{
-          background:
-            tint === "brand"
-              ? "color-mix(in oklab, var(--brand) 15%, white)"
-              : "color-mix(in oklab, var(--gold) 25%, white)",
-        }}
-      />
-      <div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
-        <div className="mt-0.5 text-xl font-black text-ink">{value}</div>
-      </div>
+    <div className="glass-soft rounded-md p-4">
+      <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-ink">{value}</div>
     </div>
   );
 }
@@ -179,7 +167,7 @@ function ScoreBadge({ score }: { score: number }) {
     : "text-fail border-fail/30 bg-fail/10";
   const label = score >= 85 ? "متوافق كليًا" : score >= 70 ? "يحتاج تحسين" : "غير متوافق";
   return (
-    <span className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-bold ${color}`}>
+    <span className={`shrink-0 rounded-md border px-3 py-1 text-[11px] font-bold ${color}`}>
       {label}
     </span>
   );

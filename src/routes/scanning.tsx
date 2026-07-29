@@ -22,9 +22,9 @@ export const Route = createFileRoute("/scanning")({
 });
 
 const STEPS = [
-  "فتح الصفحة عبر Playwright",
-  "التقاط بنية الصفحة",
-  "تحليل المحتوى عبر Gemini",
+  "جارٍ فتح الموقع",
+  "قراءة عناصر التصميم",
+  "فحص الالتزام بالمعايير",
   "مطابقة المعايير الـ27",
 ];
 
@@ -61,47 +61,44 @@ function Scanning() {
   const progress = (step / STEPS.length) * 100;
 
   return (
-    <div className="min-h-screen">
+    <div className="flex h-screen flex-col overflow-hidden">
       <AppHeader />
-      <main className="mx-auto flex max-w-2xl flex-col items-center px-4 py-16 md:py-24">
-        <div className="relative mb-6">
-          {!error && <div className="absolute inset-0 -m-4 animate-ping rounded-3xl bg-brand/10" />}
-          <AppLogo size={72} />
-        </div>
-        <h1 className="text-2xl font-black text-ink">{error ? "تعذّر إتمام الفحص" : "جارٍ فحص الموقع"}</h1>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center overflow-hidden px-4 py-4">
+        <AppLogo size={56} />
+        <h1 className="mt-4 text-2xl font-semibold text-ink">{error ? "تعذّر إتمام الفحص" : "جارٍ فحص الموقع"}</h1>
         <p className="ltr mt-1 font-mono text-sm text-muted-foreground">{url}</p>
 
         {error ? (
-          <div className="glass mt-10 w-full space-y-4 rounded-3xl p-6 text-center shadow-xl shadow-brand/5">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-fail/10 text-fail">
+          <div className="glass mt-6 w-full space-y-4 rounded-lg p-6 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-fail/10 text-fail">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <p className="text-sm text-ink/80">{error}</p>
             <button
               onClick={() => navigate({ to: "/" })}
-              className="rounded-xl bg-gradient-to-br from-brand to-brand-deep px-6 py-2.5 text-sm font-bold text-brand-foreground shadow-lg shadow-brand/20 hover:opacity-95"
+              className="rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-brand-foreground hover:bg-brand-deep"
             >
               العودة والمحاولة مجددًا
             </button>
           </div>
         ) : (
           <>
-            <div className="mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-hairline">
+            <div className="mt-4 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-hairline">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-brand to-gold transition-all duration-700"
+                className="h-full rounded-full bg-brand transition-all duration-700"
                 style={{ width: `${progress}%` }}
               />
             </div>
 
-            <ol className="glass mt-10 w-full space-y-3 rounded-3xl p-4 shadow-xl shadow-brand/5">
+            <ol className="glass mt-6 w-full space-y-2 rounded-lg p-4">
               {STEPS.map((label, i) => {
                 const done = i < step;
                 const active = i === step;
                 return (
                   <li
                     key={label}
-                    className={`flex items-center gap-3 rounded-2xl border bg-white/70 px-4 py-3 transition ${
-                      done ? "border-pass/30" : active ? "border-brand shadow-md shadow-brand/10" : "border-hairline"
+                    className={`flex items-center gap-3 rounded-md border bg-white px-4 py-2.5 transition ${
+                      done ? "border-pass/30" : active ? "border-brand" : "border-hairline"
                     }`}
                   >
                     <div className={`grid h-8 w-8 place-items-center rounded-full ${
@@ -109,7 +106,7 @@ function Scanning() {
                     }`}>
                       {done ? <Check className="h-4 w-4" /> : active ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono text-xs font-bold">{i + 1}</span>}
                     </div>
-                    <span className={`text-sm ${done ? "text-muted-foreground" : active ? "font-bold text-ink" : "text-muted-foreground"}`}>
+                    <span className={`text-sm ${done ? "text-muted-foreground" : active ? "font-semibold text-ink" : "text-muted-foreground"}`}>
                       {label}
                     </span>
                   </li>
