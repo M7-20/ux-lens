@@ -324,6 +324,9 @@ function RuleRow({
   onActivate: (rule: Rule) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const isPass = rule.status === "pass";
+  const displayTitle = isPass ? (rule.titlePass ?? `${CATEGORY_LABELS[rule.category]}: مستوفٍ`) : rule.title;
+  const displayDescription = isPass ? rule.descriptionPass : rule.description;
   return (
     <div
       className={cn(
@@ -339,7 +342,7 @@ function RuleRow({
         <StatusIcon status={rule.status} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-sm font-bold text-ink">
-            <span className="truncate">{rule.title}</span>
+            <span className="truncate">{displayTitle}</span>
             {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" aria-label="محدد على الصورة" />}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
@@ -353,8 +356,12 @@ function RuleRow({
       </button>
       {open && (
         <div className="border-t border-hairline bg-white/60 px-4 py-4 md:px-5">
-          <p className="text-sm leading-relaxed text-ink/80">{rule.description}</p>
-          {rule.recommendation && (
+          {displayDescription ? (
+            <p className="text-sm leading-relaxed text-ink/80">{displayDescription}</p>
+          ) : isPass ? (
+            <p className="text-sm leading-relaxed text-pass">لا توجد ملاحظات — هذا المعيار مستوفى بالكامل.</p>
+          ) : null}
+          {!isPass && rule.recommendation && (
             <div className="mt-3 rounded-xl border-r-2 border-gold bg-gold/5 p-3">
               <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-gold">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية

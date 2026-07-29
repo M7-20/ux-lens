@@ -93,9 +93,7 @@
   body {
     background-color: var(--color-background);
     background-image:
-      radial-gradient(1200px 600px at 85% -10%, color-mix(in oklab, var(--brand) 52%, transparent), transparent 60%),
-      radial-gradient(900px 500px at 8% 108%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 55%),
-      radial-gradient(700px 500px at 50% 40%, color-mix(in oklab, var(--brand) 28%, transparent), transparent 70%);
+      radial-gradient(900px 500px at 8% 108%, color-mix(in oklab, var(--gold) 12%, transparent), transparent 55%);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);

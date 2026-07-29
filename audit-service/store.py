@@ -20,8 +20,10 @@ def save_audit(record: dict) -> None:
     with _lock:
         history = _load()
         history.append(record)
-        with open(HISTORY_PATH, "w", encoding="utf-8") as f:
+        tmp = HISTORY_PATH.with_suffix(".json.tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
+        tmp.replace(HISTORY_PATH)
 
 
 def recent(limit: int = 10) -> list[dict]:

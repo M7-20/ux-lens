@@ -109,7 +109,7 @@ function Scanning() {
                     }`}>
                       {done ? <Check className="h-4 w-4" /> : active ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="font-mono text-xs font-bold">{i + 1}</span>}
                     </div>
-                    <span className={`text-sm ${done ? "text-muted-foreground line-through decoration-hairline" : active ? "font-bold text-ink" : "text-muted-foreground"}`}>
+                    <span className={`text-sm ${done ? "text-muted-foreground" : active ? "font-bold text-ink" : "text-muted-foreground"}`}>
                       {label}
                     </span>
                   </li>

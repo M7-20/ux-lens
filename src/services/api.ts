@@ -1,6 +1,6 @@
 // Typed data service.
 // getAudit() calls the local FastAPI audit engine in audit-service/ (Playwright + Gemini,
-// real DGA rule detection). startAudit()/getRecentAudits() stay as lightweight UI helpers.
+// real DGA rule detection). getRecentAudits()/getStats() stay as lightweight UI helpers.
 
 export type Category =
   | "Typography"
@@ -28,6 +28,8 @@ export interface Rule {
   status: Status;
   title: string;
   description: string;
+  titlePass?: string; // صياغة إيجابية للعنوان تُستخدم عند status="pass" (إن توفرت من المحرك)
+  descriptionPass?: string;
   recommendation?: string;
   evidence?: string;
   region?: Region; // مكان المخالفة على لقطة سطح المكتب (نِسَب مئوية)
@@ -67,19 +69,13 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "Accessibility": "إمكانية الوصول",
 };
 
-const AUDIT_SERVICE_URL = "https://tactics-executives-communist-parental.trycloudflare.com";
+const AUDIT_SERVICE_URL = "http://localhost:8000";
 
 // The real audit takes 1-2 minutes (Playwright capture + Gemini visual scan).
 // "/scanning" triggers the real call and "/results" re-requests the same url —
 // caching here means results.tsx picks up the already-finished audit instantly
 // instead of running the whole pipeline a second time.
 const auditCache = new Map<string, Promise<Audit>>();
-
-export async function startAudit(url: string): Promise<string> {
-  // UI-only latency simulation for the "/scanning" transition screen.
-  await new Promise((r) => setTimeout(r, 400));
-  return `aud_${Math.abs(url.split("").reduce((a, c) => a + c.charCodeAt(0), 0))}`;
-}
 
 async function fetchAudit(url: string): Promise<Audit> {
   const res = await fetch(`${AUDIT_SERVICE_URL}/audit`, {

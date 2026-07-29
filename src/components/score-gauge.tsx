@@ -19,8 +19,13 @@ export function ScoreGauge({ value, grade, size = 220, className }: GaugeProps) 
       <svg width={size} height={size} className="-rotate-90" aria-hidden>
         <defs>
           <linearGradient id="gauge-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--brand)" />
-            <stop offset="100%" stopColor="var(--gold)" />
+            <stop offset="0%" stopColor="#166A45" />
+            <stop offset="16.67%" stopColor="#1B8354" />
+            <stop offset="33.33%" stopColor="#25935F" />
+            <stop offset="50%" stopColor="#54C08A" />
+            <stop offset="66.67%" stopColor="#88D8AD" />
+            <stop offset="83.33%" stopColor="#B8EACB" />
+            <stop offset="100%" stopColor="#DFF6E7" />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--hairline)" strokeWidth={stroke} fill="none" />

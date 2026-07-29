@@ -45,11 +45,17 @@ async def audit(req: AuditRequest):
     except Exception as e:
         raise HTTPException(500, f"فشل التدقيق: {e}")
     result["durationSec"] = round(time.time() - t0)
+    tally = {"pass": 0, "warn": 0, "fail": 0, "manual_review": 0}
+    for r in result["rules"]:
+        tally[r["status"]] = tally.get(r["status"], 0) + 1
     store.save_audit({
         "url": result["url"],
         "scannedAt": result["scannedAt"],
         "score": result["score"],
+        "scoreEstimated": result["scoreEstimated"],
         "durationSec": result["durationSec"],
+        "tally": tally,
+        "reportPath": result["screenshots"][0]["url"] if result["screenshots"] else None,
     })
     return result
 
