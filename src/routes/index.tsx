@@ -42,14 +42,11 @@ function Index() {
       <main className="mx-auto max-w-5xl px-4 py-10 md:px-6 md:py-16">
         {/* Hero panel */}
         <section className="glass rounded-lg p-6 md:p-10">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-hairline bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-            أداة داخلية · وزارة البيئة والمياه والزراعة
-          </div>
           <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-[42px] md:leading-[1.15]">
-            فحص الامتثال الرقمي <span className="text-brand">للمواقع الحكومية</span>
+            افحص التزام موقعك <span className="text-brand">بمعايير الحكومة الرقمية</span>
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-            أدخل رابط الموقع الحكومي لبدء تدقيقه آليًا وفق المعايير الـ27 المعتمدة من هيئة الحكومة الرقمية (DGA).
+            تدقيق آلي وفق 27 معياراً معتمداً من هيئة الحكومة الرقمية (DGA).
           </p>
 
           <form
@@ -73,7 +70,7 @@ function Index() {
                 type="submit"
                 className="flex h-12 items-center justify-center gap-2 rounded-md bg-brand px-8 font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
               >
-                ابدأ الفحص الذكي
+                ابدأ الفحص
                 <ArrowLeft className="h-4 w-4" />
               </button>
             </div>
