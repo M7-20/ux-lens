@@ -33,7 +33,6 @@ function Results() {
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [activeShot, setActiveShot] = useState(0);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
-  const [locateToken, setLocateToken] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -98,24 +97,11 @@ function Results() {
   }, [audit]);
 
   function handleActivateRule(rule: Rule) {
-    const activating = selectedRuleId !== rule.id;
-    setSelectedRuleId(activating ? rule.id : null);
-    if (activating && rule.region && audit) {
-      const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
-      if (desktopIndex >= 0) setActiveShot(desktopIndex);
-      setLocateToken((t) => t + 1);
-    }
-  }
-
-  // Always (re)selects and re-triggers the locate signal, even if this rule is already selected —
-  // used by the explicit "عرض على الصورة" button, which should be repeatable unlike the row toggle.
-  function handleLocateRule(rule: Rule) {
-    setSelectedRuleId(rule.id);
+    setSelectedRuleId((id) => (id === rule.id ? null : rule.id));
     if (rule.region && audit) {
       const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
       if (desktopIndex >= 0) setActiveShot(desktopIndex);
     }
-    setLocateToken((t) => t + 1);
   }
 
   if (error) {
@@ -282,7 +268,6 @@ function Results() {
                     rule={r}
                     active={selectedRuleId === r.id}
                     onActivate={handleActivateRule}
-                    onLocate={handleLocateRule}
                   />
                 ))}
                 {rules.length === 0 && (
@@ -299,7 +284,6 @@ function Results() {
               active={activeShot}
               onActiveChange={setActiveShot}
               activeRule={selectedRule}
-              locateSignal={locateToken}
             />
           </div>
         </section>
@@ -336,12 +320,10 @@ function RuleRow({
   rule,
   active,
   onActivate,
-  onLocate,
 }: {
   rule: Rule;
   active: boolean;
   onActivate: (rule: Rule) => void;
-  onLocate: (rule: Rule) => void;
 }) {
   const [open, setOpen] = useState(false);
   const isPass = rule.status === "pass";
@@ -363,26 +345,12 @@ function RuleRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
             <span className="truncate">{displayTitle}</span>
+            {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="محدد على الصورة" />}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
             {CATEGORY_LABELS[rule.category]}
           </div>
         </div>
-        {rule.region && (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); onLocate(rule); }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onLocate(rule); }
-            }}
-            title="عرض موضع المخالفة على الصورة"
-            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-hairline bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-brand/40 hover:bg-brand/8 hover:text-brand"
-          >
-            <MapPin className="h-3 w-3" />
-            عرض على الصورة
-          </span>
-        )}
         <span className="hidden shrink-0 rounded-md bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
           {rule.id}
         </span>
@@ -437,20 +405,16 @@ function ScreenshotPanel({
   active,
   onActiveChange,
   activeRule,
-  locateSignal,
 }: {
   shots: Screenshot[];
   url: string;
   active: number;
   onActiveChange: (i: number) => void;
   activeRule: Rule | null;
-  locateSignal: number;
 }) {
   const [preview, setPreview] = useState<Screenshot | null>(null);
-  const [pulse, setPulse] = useState(false);
   const [cropWidth, setCropWidth] = useState(0);
   const cropRef = useRef<HTMLButtonElement>(null);
-  const lightboxHighlightRef = useRef<HTMLDivElement>(null);
   const current = shots[active];
 
   useEffect(() => {
@@ -471,39 +435,26 @@ function ScreenshotPanel({
     return () => ro.disconnect();
   }, []);
 
-  const highlight = activeRule?.region && current?.viewport === "desktop" ? activeRule.region : null;
-
-  // With object-cover cropping a fixed-height box, only the top slice of the real
-  // (very tall) screenshot is visible. This is that slice's height, expressed as a
-  // percentage in the same 0-100 basis as rule.region — so it's directly comparable
-  // to highlight.y to decide whether the violation is already on-screen or below the fold.
-  const visiblePct =
-    cropWidth && current?.width && current?.height
-      ? Math.min(100, ((CROP_HEIGHT * current.width) / (cropWidth * current.height)) * 100)
-      : 100;
-  const highlightInCrop = highlight ? highlight.y < visiblePct : false;
-
-  // Jump to the violation whenever it's (re)selected: if it's already visible in the
-  // cropped preview, just pulse it in place; otherwise open the lightbox so the
-  // scroll-into-view effect below can bring it into view.
-  useEffect(() => {
-    if (locateSignal === 0 || !highlight) return;
-    if (!highlightInCrop) setPreview(current);
-    setPulse(true);
-    const t = setTimeout(() => setPulse(false), 1600);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locateSignal]);
-
-  // Once the lightbox is showing a highlighted violation, scroll it into view —
-  // scrollIntoView finds the lightbox's own scrollable container automatically.
-  useEffect(() => {
-    if (preview && highlight && lightboxHighlightRef.current) {
-      lightboxHighlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [preview, highlight]);
-
   if (!shots.length) return null;
+
+  const highlight = activeRule?.region && current.viewport === "desktop" ? activeRule.region : null;
+
+  // object-cover object-top scales the image so its rendered width matches the crop
+  // container's width, then crops from the bottom — so a single width-based scale factor
+  // converts the region's real-pixel position into the crop's rendered-pixel space.
+  const cropScale = cropWidth && current.width ? cropWidth / current.width : 0;
+  const highlightPx =
+    highlight && cropScale
+      ? {
+          left: (highlight.x / 100) * current.width * cropScale,
+          top: (highlight.y / 100) * current.height * cropScale,
+          width: (highlight.width / 100) * current.width * cropScale,
+          height: (highlight.height / 100) * current.height * cropScale,
+        }
+      : null;
+  // Only the top of the box needs to be inside the 440px crop to be worth drawing —
+  // anything below that is genuinely not visible here; the lightbox is the way to see it.
+  const highlightVisibleInCrop = highlightPx ? highlightPx.top < CROP_HEIGHT : false;
 
   return (
     <div className="glass rounded-lg p-6">
@@ -567,17 +518,14 @@ function ScreenshotPanel({
           }}
         />
 
-        {highlight && highlightInCrop && (
+        {highlightPx && highlightVisibleInCrop && (
           <div
-            className={cn(
-              "pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)] transition-transform duration-500",
-              pulse && "animate-pulse ring-4 ring-fail/60 scale-105"
-            )}
+            className="pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)]"
             style={{
-              left: `${highlight.x}%`,
-              top: `${highlight.y}%`,
-              width: `${highlight.width}%`,
-              height: `${highlight.height}%`,
+              left: `${highlightPx.left}px`,
+              top: `${highlightPx.top}px`,
+              width: `${highlightPx.width}px`,
+              height: `${highlightPx.height}px`,
             }}
           >
             <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
@@ -611,26 +559,7 @@ function ScreenshotPanel({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="relative">
-              <img src={preview.url} alt={preview.label} className="block w-full" />
-              {highlight && preview.viewport === "desktop" && (
-                <div
-                  ref={lightboxHighlightRef}
-                  className={cn(
-                    "pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)] transition-transform duration-500",
-                    pulse && "animate-pulse ring-4 ring-fail/60 scale-105"
-                  )}
-                  style={{
-                    left: `${highlight.x}%`,
-                    top: `${highlight.y}%`,
-                    width: `${highlight.width}%`,
-                    height: `${highlight.height}%`,
-                  }}
-                >
-                  <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
-                </div>
-              )}
-            </div>
+            <img src={preview.url} alt={preview.label} className="block w-full" />
           </div>
         </div>
       )}
