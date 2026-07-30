@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon, MapPin, Loader2, HelpCircle } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, ImageIcon, MapPin, Loader2, HelpCircle, Maximize2 } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { ScoreGauge } from "@/components/score-gauge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ function Results() {
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [activeShot, setActiveShot] = useState(0);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+  const [locateToken, setLocateToken] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -97,11 +98,24 @@ function Results() {
   }, [audit]);
 
   function handleActivateRule(rule: Rule) {
-    setSelectedRuleId((id) => (id === rule.id ? null : rule.id));
+    const activating = selectedRuleId !== rule.id;
+    setSelectedRuleId(activating ? rule.id : null);
+    if (activating && rule.region && audit) {
+      const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
+      if (desktopIndex >= 0) setActiveShot(desktopIndex);
+      setLocateToken((t) => t + 1);
+    }
+  }
+
+  // Always (re)selects and re-triggers the locate signal, even if this rule is already selected —
+  // used by the explicit "عرض على الصورة" button, which should be repeatable unlike the row toggle.
+  function handleLocateRule(rule: Rule) {
+    setSelectedRuleId(rule.id);
     if (rule.region && audit) {
       const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
       if (desktopIndex >= 0) setActiveShot(desktopIndex);
     }
+    setLocateToken((t) => t + 1);
   }
 
   if (error) {
@@ -263,7 +277,13 @@ function Results() {
 
               <div className="space-y-2">
                 {rules.map((r) => (
-                  <RuleRow key={r.id} rule={r} active={selectedRuleId === r.id} onActivate={handleActivateRule} />
+                  <RuleRow
+                    key={r.id}
+                    rule={r}
+                    active={selectedRuleId === r.id}
+                    onActivate={handleActivateRule}
+                    onLocate={handleLocateRule}
+                  />
                 ))}
                 {rules.length === 0 && (
                   <div className="p-10 text-center text-sm text-muted-foreground">لا توجد معايير مطابقة للفلتر.</div>
@@ -279,6 +299,7 @@ function Results() {
               active={activeShot}
               onActiveChange={setActiveShot}
               activeRule={selectedRule}
+              locateSignal={locateToken}
             />
           </div>
         </section>
@@ -315,10 +336,12 @@ function RuleRow({
   rule,
   active,
   onActivate,
+  onLocate,
 }: {
   rule: Rule;
   active: boolean;
   onActivate: (rule: Rule) => void;
+  onLocate: (rule: Rule) => void;
 }) {
   const [open, setOpen] = useState(false);
   const isPass = rule.status === "pass";
@@ -340,12 +363,26 @@ function RuleRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
             <span className="truncate">{displayTitle}</span>
-            {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="محدد على الصورة" />}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
             {CATEGORY_LABELS[rule.category]}
           </div>
         </div>
+        {rule.region && (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); onLocate(rule); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onLocate(rule); }
+            }}
+            title="عرض موضع المخالفة على الصورة"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-hairline bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:border-brand/40 hover:bg-brand/8 hover:text-brand"
+          >
+            <MapPin className="h-3 w-3" />
+            عرض على الصورة
+          </span>
+        )}
         <span className="hidden shrink-0 rounded-md bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
           {rule.id}
         </span>
@@ -392,25 +429,81 @@ const VIEWPORT_ICON = {
   mobile: Smartphone,
 } as const;
 
+const CROP_HEIGHT = 440;
+
 function ScreenshotPanel({
   shots,
   url,
   active,
   onActiveChange,
   activeRule,
+  locateSignal,
 }: {
   shots: Screenshot[];
   url: string;
   active: number;
   onActiveChange: (i: number) => void;
   activeRule: Rule | null;
+  locateSignal: number;
 }) {
   const [preview, setPreview] = useState<Screenshot | null>(null);
+  const [pulse, setPulse] = useState(false);
+  const [cropWidth, setCropWidth] = useState(0);
+  const cropRef = useRef<HTMLButtonElement>(null);
+  const lightboxHighlightRef = useRef<HTMLDivElement>(null);
   const current = shots[active];
 
-  if (!shots.length) return null;
+  useEffect(() => {
+    if (!preview) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setPreview(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
 
-  const highlight = activeRule?.region && current.viewport === "desktop" ? activeRule.region : null;
+  useLayoutEffect(() => {
+    const el = cropRef.current;
+    if (!el) return;
+    setCropWidth(el.getBoundingClientRect().width);
+    const ro = new ResizeObserver((entries) => setCropWidth(entries[0].contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const highlight = activeRule?.region && current?.viewport === "desktop" ? activeRule.region : null;
+
+  // With object-cover cropping a fixed-height box, only the top slice of the real
+  // (very tall) screenshot is visible. This is that slice's height, expressed as a
+  // percentage in the same 0-100 basis as rule.region — so it's directly comparable
+  // to highlight.y to decide whether the violation is already on-screen or below the fold.
+  const visiblePct =
+    cropWidth && current?.width && current?.height
+      ? Math.min(100, ((CROP_HEIGHT * current.width) / (cropWidth * current.height)) * 100)
+      : 100;
+  const highlightInCrop = highlight ? highlight.y < visiblePct : false;
+
+  // Jump to the violation whenever it's (re)selected: if it's already visible in the
+  // cropped preview, just pulse it in place; otherwise open the lightbox so the
+  // scroll-into-view effect below can bring it into view.
+  useEffect(() => {
+    if (locateSignal === 0 || !highlight) return;
+    if (!highlightInCrop) setPreview(current);
+    setPulse(true);
+    const t = setTimeout(() => setPulse(false), 1600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locateSignal]);
+
+  // Once the lightbox is showing a highlighted violation, scroll it into view —
+  // scrollIntoView finds the lightbox's own scrollable container automatically.
+  useEffect(() => {
+    if (preview && highlight && lightboxHighlightRef.current) {
+      lightboxHighlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [preview, highlight]);
+
+  if (!shots.length) return null;
 
   return (
     <div className="glass rounded-lg p-6">
@@ -459,78 +552,45 @@ function ScreenshotPanel({
         </div>
       )}
 
-      <div className="relative max-h-[70vh] w-full overflow-y-auto overscroll-contain rounded-md border border-hairline">
       <button
+        ref={cropRef}
         onClick={() => setPreview(current)}
-        className="group relative block w-full bg-white"
+        className="group relative block h-[440px] w-full overflow-hidden rounded-md border border-hairline bg-white"
       >
-        <div
-          className="relative w-full bg-panel/5"
-          style={{ aspectRatio: `${current.width} / ${current.height}` }}
-        >
-          <img
-            src={current.url}
-            alt={`لقطة ${current.label} للموقع ${url}`}
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover object-top"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
+        <img
+          src={current.url}
+          alt={`لقطة ${current.label} للموقع ${url}`}
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover object-top"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+
+        {highlight && highlightInCrop && (
+          <div
+            className={cn(
+              "pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)] transition-transform duration-500",
+              pulse && "animate-pulse ring-4 ring-fail/60 scale-105"
+            )}
+            style={{
+              left: `${highlight.x}%`,
+              top: `${highlight.y}%`,
+              width: `${highlight.width}%`,
+              height: `${highlight.height}%`,
             }}
-          />
-
-          {highlight && (
-            <div
-              className="pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)]"
-              style={{
-                left: `${highlight.x}%`,
-                top: `${highlight.y}%`,
-                width: `${highlight.width}%`,
-                height: `${highlight.height}%`,
-              }}
-            >
-              <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
-            </div>
-          )}
-
-          <div className="absolute bottom-3 left-3 rounded-md bg-ink/70 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
-            اضغط للتكبير
+          >
+            <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
           </div>
+        )}
+
+        {/* fade + hint signal there's more below the crop, without an internal scrollbar */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-ink/70 via-ink/20 to-transparent transition-opacity group-hover:from-ink/80" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-white">
+          <Maximize2 className="h-3.5 w-3.5" />
+          اضغط لعرض الصفحة كاملة
         </div>
       </button>
-      </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {shots.map((s, i) => (
-          <button
-            key={s.viewport}
-            onClick={() => onActiveChange(i)}
-            className={cn(
-              "group relative overflow-hidden rounded-md border bg-white transition",
-              active === i
-                ? "border-brand ring-1 ring-brand/30"
-                : "border-hairline hover:border-brand/40"
-            )}
-          >
-            <div
-              className="relative w-full bg-panel/5"
-              style={{ aspectRatio: `${s.width} / ${s.height}` }}
-            >
-              <img
-                src={s.url}
-                alt={s.label}
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover object-top"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
-            <div className="flex items-center justify-between border-t border-hairline bg-white px-2 py-1 text-[10px] font-bold text-ink">
-              <span>{s.label}</span>
-            </div>
-          </button>
-        ))}
-      </div>
 
       {preview && (
         <div
@@ -551,7 +611,26 @@ function ScreenshotPanel({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <img src={preview.url} alt={preview.label} className="block w-full" />
+            <div className="relative">
+              <img src={preview.url} alt={preview.label} className="block w-full" />
+              {highlight && preview.viewport === "desktop" && (
+                <div
+                  ref={lightboxHighlightRef}
+                  className={cn(
+                    "pointer-events-none absolute rounded-md border-2 border-fail shadow-[0_0_0_9999px_rgba(31,41,55,0.35)] transition-transform duration-500",
+                    pulse && "animate-pulse ring-4 ring-fail/60 scale-105"
+                  )}
+                  style={{
+                    left: `${highlight.x}%`,
+                    top: `${highlight.y}%`,
+                    width: `${highlight.width}%`,
+                    height: `${highlight.height}%`,
+                  }}
+                >
+                  <span className="absolute -top-2.5 -right-2.5 grid h-5 w-5 place-items-center rounded-full bg-fail text-[10px] font-black text-white">!</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
