@@ -12,7 +12,4 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  vite: {
-    server: { allowedHosts: [".trycloudflare.com"] },
-  },
 });

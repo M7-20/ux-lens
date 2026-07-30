@@ -18,7 +18,7 @@ app = FastAPI(title="UX Lens Audit Service")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "https://breeds-couple-dragon-durham.trycloudflare.com"],
+    allow_origins=["http://localhost:8080"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
