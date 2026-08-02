@@ -7,14 +7,12 @@ export function AppLogo({ size = 40 }: { size?: number }) {
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-hairline bg-surface">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-3 md:px-6 md:py-4">
         <Link to="/" className="flex items-center gap-3">
           <AppLogo size={44} />
           <div className="leading-tight">
-            <div className="text-base font-semibold tracking-tight text-brand">تدقيق الامتثال الرقمي</div>
-            <div className="text-[11px] font-medium text-muted-foreground">
-              نظام تدقيق المعايير الرقمية · وزارة البيئة والمياه والزراعة
-            </div>
+            <div className="text-lg font-semibold tracking-tight text-brand">UX LENS</div>
+            <div className="text-xs font-medium text-ink">وزارة البيئة والمياه والزراعة</div>
           </div>
         </Link>
       </div>

@@ -7,9 +7,9 @@ import { getRecentAudits, getStats, type Stats } from "@/services/api";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "تدقيق الامتثال الرقمي — فحص جديد" },
+      { title: "UX LENS — فحص جديد" },
       { name: "description", content: "ابدأ فحصًا جديدًا لموقع حكومي وفق معايير هيئة الحكومة الرقمية." },
-      { property: "og:title", content: "تدقيق الامتثال الرقمي — فحص جديد" },
+      { property: "og:title", content: "UX LENS — فحص جديد" },
       { property: "og:description", content: "أداة داخلية لفحص التزام المواقع الحكومية بمعايير DGA." },
     ],
   }),
@@ -152,10 +152,10 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function formatDuration(sec: number): string {
   if (sec <= 0) return "—";
-  if (sec < 60) return `${sec} ثانية`;
+  if (sec < 60) return `${sec}s`;
   const m = Math.floor(sec / 60);
   const s = sec % 60;
-  return s > 0 ? `${m} د ${s} ث` : `${m} دقيقة`;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
 function ScoreBadge({ score }: { score: number }) {
