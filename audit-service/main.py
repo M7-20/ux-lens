@@ -1,3 +1,4 @@
+import asyncio
 import os
 import time
 
@@ -41,7 +42,9 @@ async def audit(req: AuditRequest):
         raise HTTPException(500, "GEMINI_API_KEY غير مضبوط — عدّل ملف audit-service/.env")
     t0 = time.time()
     try:
-        result = await engine.run_audit(req.url, GEMINI_API_KEY)
+        result = await asyncio.wait_for(engine.run_audit(req.url, GEMINI_API_KEY), timeout=300)
+    except asyncio.TimeoutError:
+        raise HTTPException(504, "تجاوز الفحص المهلة القصوى (5 دقائق) وأُلغي.")
     except Exception as e:
         raise HTTPException(500, f"فشل التدقيق: {e}")
     result["durationSec"] = round(time.time() - t0)

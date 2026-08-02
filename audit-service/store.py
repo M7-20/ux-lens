@@ -2,6 +2,7 @@
 # "recent audits" list and aggregate stats. A JSON file is enough at this scale;
 # swap for a real DB if usage grows.
 import json
+import statistics
 from pathlib import Path
 from threading import Lock
 
@@ -36,6 +37,8 @@ def stats() -> dict:
     if not history:
         return {"totalAudits": 0, "avgDurationSec": 0, "avgScore": 0}
     total = len(history)
-    avg_duration = round(sum(h["durationSec"] for h in history) / total)
+    # median, not mean — a single stuck/runaway audit shouldn't drag this stat away
+    # from what a typical scan actually takes
+    avg_duration = round(statistics.median(h["durationSec"] for h in history))
     avg_score = round(sum(h["score"] for h in history) / total)
     return {"totalAudits": total, "avgDurationSec": avg_duration, "avgScore": avg_score}

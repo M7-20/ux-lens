@@ -231,6 +231,31 @@ async def capture_page(url: str) -> dict:
                 return out;
             }""")
 
+            # حقن CSS أعلاه يوقف animation/transition لكن لا يوقف الحركة المدفوعة بمؤقّتات JS
+            # (كاروسيل Swiper وأمثاله يستخدمون setInterval/setTimeout لجدولة autoplay) — هذا عام
+            # ويعمل على أي موقع، ليس Swiper فقط، لأنه يعطّل كل المؤقّتات النشطة مباشرة.
+            await pg.evaluate("""() => {
+                document.querySelectorAll('.swiper').forEach(el => {
+                    try { el.swiper?.autoplay?.stop(); } catch(e) {}
+                });
+                const maxId = setTimeout(() => {}, 0);
+                for (let id = maxId; id >= 0; id--) { clearTimeout(id); clearInterval(id); }
+                document.querySelectorAll('video').forEach(v => { try { v.pause(); } catch(e) {} });
+            }""")
+            await pg.wait_for_timeout(500)
+
+            # مكوّنات كاروسيل مخصّصة (بلا Swiper ولا مؤقّتات) قد تتحرك عبر requestAnimationFrame
+            # بدل setInterval — وهذا لا يوقفه أي مما سبق. نؤجّل تعطيله لآخر لحظة قبل الالتقاط
+            # مباشرة (بعد كل الانتظارات أعلاه) حتى نعطي أي استخدام مشروع لـrAF (رسم تدريجي،
+            # تحميل محتوى) فرصة كاملة لينهي عمله أولاً، فلا نجمّد إلا الإطار الأخير المستقر.
+            # نُبدّل requestAnimationFrame بدالة فارغة أيضاً حتى لا تعيد أي حلقة ذاتية الجدولة
+            # (نمط tick() { ...; requestAnimationFrame(tick); }) جدولة نفسها بعد الإلغاء مباشرة.
+            await pg.evaluate("""() => {
+                const maxRAF = requestAnimationFrame(() => {});
+                for (let id = maxRAF; id >= 0; id--) { cancelAnimationFrame(id); }
+                window.requestAnimationFrame = () => 0;
+            }""")
+
             with open(shot, "wb") as f:
                 f.write(await pg.screenshot(full_page=True))
 
