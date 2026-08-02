@@ -1,7 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <circle cx="32" cy="32" r="30" fill="#166A45"/>
-  <circle cx="28" cy="27" r="12.5" fill="none" stroke="#ffffff" stroke-width="4.5"/>
-  <path d="M20.5 23 a10 10 0 0 1 6-4.5" fill="none" stroke="#99f6e4" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="37.5" y1="36.5" x2="47" y2="46" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round"/>
-  <path d="M22.5 27.5 l4 4 l7.5 -8" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="420"
+     height="382"
+     viewBox="0 0 1315 1196"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">Green abstract symbol</title>
+  <desc id="desc">Vector reconstruction of the supplied green logo on a transparent background.</desc>
+
+  <defs>
+    <linearGradient id="mainGreen" x1="250" y1="760" x2="1050" y2="300"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#005845"/>
+      <stop offset="0.38" stop-color="#00694b"/>
+      <stop offset="0.72" stop-color="#00a85a"/>
+      <stop offset="1" stop-color="#00bd63"/>
+    </linearGradient>
+    <linearGradient id="upperGreen" x1="480" y1="310" x2="660" y2="550"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#005746"/>
+      <stop offset="1" stop-color="#00624b"/>
+    </linearGradient>
+    <linearGradient id="lowerGreen" x1="780" y1="790" x2="1060" y2="690"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00a95a"/>
+      <stop offset="1" stop-color="#00bd62"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main sweeping form -->
+  <path fill="url(#mainGreen)" d="
+    M242 250
+    Q242 249 244 249
+    H410
+    Q412 249 412 252
+    V658
+    C412 706 440 739 484 739
+    C535 739 571 711 608 661
+    L826 361
+    C874 295 930 249 986 249
+    H1081
+    Q1084 249 1084 253
+    V408
+    Q1084 412 1080 413
+    C1023 425 974 459 919 515
+    L654 818
+    C593 888 536 924 459 924
+    C337 924 242 827 242 678
+    Z"/>
+
+  <!-- Upper detached folded form -->
+  <path fill="url(#upperGreen)" d="
+    M478 249
+    L692 416
+    C705 426 708 441 700 454
+    L609 594
+    C603 603 595 605 587 598
+    L511 531
+    C489 511 478 491 478 469
+    Z"/>
+
+  <!-- Lower-right detached form -->
+  <path fill="url(#lowerGreen)" d="
+    M894 616
+    C898 611 903 611 908 616
+    L1007 708
+    C1033 732 1057 746 1080 752
+    Q1084 753 1084 758
+    V920
+    Q1084 924 1080 924
+    H996
+    C951 924 917 911 885 881
+    L773 769
+    C768 764 768 757 773 751
+    Z"/>
 </svg>
