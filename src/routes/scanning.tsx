@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import { z } from "zod";
-import { AppHeader, AppLogo } from "@/components/app-header";
+import { AppHeader } from "@/components/app-header";
 import { getAudit } from "@/services/api";
 
 const searchSchema = z.object({ url: z.string() });
@@ -11,9 +11,9 @@ export const Route = createFileRoute("/scanning")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "تدقيق الامتثال الرقمي — جارٍ الفحص" },
+      { title: "UX LENS — جارٍ الفحص" },
       { name: "description", content: "جارٍ فحص الموقع وفق معايير هيئة الحكومة الرقمية." },
-      { property: "og:title", content: "تدقيق الامتثال الرقمي — جارٍ الفحص" },
+      { property: "og:title", content: "UX LENS — جارٍ الفحص" },
       { property: "og:description", content: "تحليل آلي للموقع الحكومي." },
       { name: "robots", content: "noindex" },
     ],
@@ -64,8 +64,7 @@ function Scanning() {
     <div className="flex h-screen flex-col overflow-hidden">
       <AppHeader />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center overflow-hidden px-4 py-4">
-        <AppLogo size={56} />
-        <h1 className="mt-4 text-2xl font-semibold text-ink">{error ? "تعذّر إتمام الفحص" : "جارٍ فحص الموقع"}</h1>
+        <h1 className="text-2xl font-semibold text-ink">{error ? "تعذّر إتمام الفحص" : "جارٍ فحص الموقع"}</h1>
         <p className="ltr mt-1 font-mono text-sm text-muted-foreground">{url}</p>
 
         {error ? (
