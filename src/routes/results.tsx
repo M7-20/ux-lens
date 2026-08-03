@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, MapPin, Loader2, HelpCircle } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, MapPin, Loader2, HelpCircle, Globe, Clock } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Screenshot } from "@/services/api";
@@ -121,10 +121,15 @@ function Results() {
         {/* Compact top bar: URL/meta, progress + scores + grade, tally counts, actions — all in one strip */}
         <div className="glass shrink-0 rounded-lg p-4 md:flex md:flex-wrap md:items-center md:gap-5">
           <div className="min-w-0 md:flex-1">
-            <div className="ltr truncate font-mono text-sm font-semibold text-ink">{audit.url}</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">
-              {new Date(audit.scannedAt).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
-              {" · "}المدة: <span className="font-mono">{audit.durationSec}s</span>
+            <div dir="ltr" className="flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate font-mono text-sm font-semibold text-ink">{audit.url}</span>
+            </div>
+            <div dir="ltr" className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Clock className="h-3 w-3 shrink-0" />
+              <span>{new Date(audit.scannedAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</span>
+              <span>·</span>
+              <span className="font-mono">{audit.durationSec}s</span>
             </div>
           </div>
 
