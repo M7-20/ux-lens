@@ -121,7 +121,7 @@ function Index() {
                   <div className="min-w-0">
                     <div className="ltr truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
-                      {new Date(r.scannedAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long", day: "numeric" })}
+                      {new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}
                       {" · "}27 معيار
                     </div>
                   </div>
