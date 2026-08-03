@@ -62,6 +62,15 @@ GLOBAL_TOP = {r["id"] for r in DGA["rules"]
 
 RADIUS_TOKEN = {float(v): k for k, v in TOKENS["radius"].items()}
 ALLOWED_RADIUS = sorted(RADIUS_TOKEN)
+
+# ============================================================
+#  طبقة UX العامة (اختيارية) — معزولة بالكامل في ux/، لا تلمس منطق DGA أعلاه.
+#  موقوفة مؤقتاً (2026-08-03): سنعيد بناءها بشكل صحيح لاحقاً. ملفات ux/ باقية على حالها
+#  بلا حذف — لتفعيلها من جديد فقط أعد القيمة لـTrue.
+#  حذفها نهائياً: احذف مجلد ux/ بالكامل + هذا السطر + نقطتَي "UX layer hook" أدناه
+#  (داخل capture_page وrun_audit) — لا أثر آخر على أي مكان في هذا الملف.
+# ============================================================
+ENABLE_UX_LAYER = False
 BASE_UNIT = int(TOKENS["spacing"].get("base_unit", 4))
 SPC_EXTRA = {2.0, 6.0}
 ALLOWED_FS = sorted({d["size_px"] for d in TOKENS["typography"]["scale"].values()})
@@ -120,6 +129,7 @@ def save_cache(cache: dict) -> None:
 async def capture_page(url: str) -> dict:
     name = safe_name(url)
     shot = str(SHOTS_DIR / f"raw_{name}.png")
+    ux_data = None
     async with async_playwright() as p:
         b = await p.chromium.launch(args=["--no-sandbox"])
         pg = await b.new_page(viewport={"width": 1440, "height": 900})
@@ -382,13 +392,18 @@ async def capture_page(url: str) -> dict:
                 try { approvedLoaded = document.fonts.check(`12px "__APPROVED__"`); } catch(e) {}
                 return {fonts, radii, spacing, paras, grads, controls, rtl, approvedLoaded};
             }""".replace("__APPROVED__", APPROVED_FONT))
+
+            # UX layer hook — نفس الصفحة المفتوحة، مسار جمع بيانات مستقل تماماً (ux/ux_checks.py).
+            if ENABLE_UX_LAYER:
+                from ux.ux_checks import gather_ux_data
+                ux_data = await gather_ux_data(pg)
         finally:
             await b.close()
 
     with Image.open(shot) as im:
         width, height = im.size
     return {"url": url, "name": name, "shot": shot, "shot_width": width, "shot_height": height,
-            "broken": broken, "imgs": imgs, "statusbar": statusbar, "colors": colors, **m}
+            "broken": broken, "imgs": imgs, "statusbar": statusbar, "colors": colors, "ux_data": ux_data, **m}
 
 
 # ============ 2) الفحوص الكودية (CSS/DOM) ============
@@ -1059,4 +1074,24 @@ async def run_audit(url: str, gemini_api_key: str) -> dict:
     client = genai.Client(api_key=gemini_api_key)
     vv, _on_imgs = await asyncio.to_thread(_run_visual_scan_sync, client, page)
 
-    return assemble_audit(url, page, checks, vv, elapsed=time.time() - t0)
+    result = assemble_audit(url, page, checks, vv, elapsed=time.time() - t0)
+
+    # UX layer hook — دمج إضافي بعد اكتمال نتيجة DGA، لا يعدّل assemble_audit()/checks
+    # الخاصة بـDGA. تعطيل ENABLE_UX_LAYER يُلغي هذه الكتلة بالكامل فيرجع للنتيجة الأصلية.
+    for r in result["rules"]:
+        r["source"] = "DGA"
+    if ENABLE_UX_LAYER and page.get("ux_data"):
+        from ux.ux_checks import RULE_BY_ID as UX_RULE_BY_ID
+        from ux.ux_checks import WEIGHT as UX_WEIGHT
+        from ux.ux_checks import run_ux_checks
+        ux_rules = run_ux_checks(page["ux_data"], page["shot_width"], page["shot_height"])
+        if ux_rules:
+            result["rules"].extend(ux_rules)
+            ux_total_w = sum(UX_WEIGHT[UX_RULE_BY_ID[r["id"]]["severity"]] for r in ux_rules)
+            ux_lost = sum(UX_WEIGHT[UX_RULE_BY_ID[r["id"]]["severity"]]
+                          for r in ux_rules if r["status"] not in ("pass", "manual_review"))
+            for key in ("score", "scoreEstimated"):
+                dga_lost = TOTAL_W * (1 - result[key] / 100)
+                result[key] = max(0, round(100 * (1 - (dga_lost + ux_lost) / (TOTAL_W + ux_total_w))))
+
+    return result

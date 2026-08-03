@@ -1,0 +1,50 @@
+{
+  "_meta": {
+    "source": "UX Lens Universal Guidelines",
+    "rule_prefix": "UX",
+    "total_rules": 5,
+    "note": "المرحلة الأولى فقط — 5 من أصل 27 قاعدة UX عامة فريدة (لا تتداخل مع DGA وقابلة للفحص الآلي)، مخطَّط تفعيل الباقي لاحقاً."
+  },
+  "rules": [
+    {
+      "id": "A11-001",
+      "category": "Accessibility (a11y)",
+      "severity": "Error",
+      "title": "Missing Alt Text on Images",
+      "description": "صور محتوى بلا نص بديل (alt) يعتمد عليه قارئ الشاشة.",
+      "recommendation": "أضف نص alt وصفي لكل صورة محتوى (أيقونات الزخرفة البحتة alt=\"\" تبقى استثناءً)."
+    },
+    {
+      "id": "IE-002",
+      "category": "Interactive Elements",
+      "severity": "Error",
+      "title": "Insufficient Touch Target Size",
+      "description": "عناصر تفاعلية (روابط/أزرار) أصغر من 44×44px، صعبة اللمس على الجوال.",
+      "recommendation": "اجعل الحد الأدنى لحجم أي عنصر تفاعلي 44×44px مع 8px تباعد عن أقرب عنصر آخر."
+    },
+    {
+      "id": "CD-001",
+      "category": "Content Density",
+      "severity": "Warning",
+      "title": "Footer Link Density",
+      "description": "الفوتر يحتوي عدداً كبيراً جداً من الروابط المتلاصقة (أكثر من 30) بلا تنظيم واضح.",
+      "recommendation": "نظّم روابط الفوتر في 4-5 أعمدة بـ6-8 روابط لكل عمود."
+    },
+    {
+      "id": "FI-001",
+      "category": "Forms & Input",
+      "severity": "Error",
+      "title": "Missing Input Labels",
+      "description": "حقول نموذج بلا تسمية (label) مرتبطة برمجياً — الاعتماد على placeholder وحده غير كافٍ.",
+      "recommendation": "أضف عنصر label مرتبط بـfor/id (أو aria-label) لكل حقل إدخال، ثابتاً وظاهراً بجانب الحقل."
+    },
+    {
+      "id": "NW-001",
+      "category": "Navigation & Wayfinding",
+      "severity": "Error",
+      "title": "No Current Location Indicator",
+      "description": "رابط الصفحة الحالية في قائمة التنقل الرئيسية لا يحمل أي مؤشر بصري يميّزه عن باقي الروابط.",
+      "recommendation": "أضف aria-current=\"page\" أو صنف مميّز (active) لرابط الصفحة الحالية في التنقل."
+    }
+  ]
+}
