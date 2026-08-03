@@ -278,7 +278,7 @@ function Results() {
         })()}
 
         <footer className="mt-6 border-t border-hairline pt-4 text-center text-xs text-muted-foreground md:hidden">
-          UX LENS · وزارة البيئة والمياه والزراعة · معايير هيئة الحكومة الرقمية
+          UX LENS · معايير هيئة الحكومة الرقمية
         </footer>
       </main>
     </div>
