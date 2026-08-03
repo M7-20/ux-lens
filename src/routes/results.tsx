@@ -451,24 +451,10 @@ function ScreenshotPanel({
         </div>
       )}
 
-      {showAllRegions ? (
+      {showAllRegions && (
         <div className="mb-3 flex items-center gap-2 rounded-md border border-fail/30 bg-fail/5 px-3 py-2 text-xs font-medium text-ink md:shrink-0">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <span>تُعرض كل مواضع المخالفات على الصورة ({allHighlights.length})</span>
-        </div>
-      ) : activeRule && (
-        <div
-          className={cn(
-            "mb-3 flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition md:shrink-0",
-            highlight
-              ? "border-fail/30 bg-fail/5 text-ink"
-              : "border-hairline bg-muted text-muted-foreground"
-          )}
-        >
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          {highlight
-            ? <span>موقع المخالفة: {activeRule.title}</span>
-            : <span>حدد لقطة سطح المكتب لعرض موقع «{activeRule.title}»</span>}
         </div>
       )}
 
