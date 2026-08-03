@@ -119,9 +119,9 @@ function Index() {
                     {r.score}
                   </div>
                   <div className="min-w-0">
-                    <div className="ltr truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
+                    <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
-                      {new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}
+                      <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
                       {" · "}27 معيار
                     </div>
                   </div>
