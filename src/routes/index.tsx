@@ -112,10 +112,10 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center gap-4 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
+                className="group flex items-center justify-between gap-3 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
               >
                 {/* الموقع والتاريخ */}
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 max-w-[30%]">
                   <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">
                     {r.url.replace(/^https?:\/\//, "")}
                   </div>
