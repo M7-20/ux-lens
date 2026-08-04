@@ -456,13 +456,6 @@ function ScreenshotPanel({
         </div>
       )}
 
-      {showAllRegions && (
-        <div className="mb-3 flex items-center gap-2 rounded-md border border-fail/30 bg-fail/5 px-3 py-2 text-xs font-medium text-ink md:shrink-0">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          <span>تُعرض كل مواضع المخالفات على الصورة ({allHighlights.length})</span>
-        </div>
-      )}
-
       <div className="max-h-[80vh] w-full overflow-y-auto overscroll-auto rounded-md border border-hairline print:max-h-none print:overflow-visible md:max-h-none md:min-h-0 md:flex-1">
         <div className="relative">
           <img
