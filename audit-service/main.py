@@ -56,6 +56,8 @@ async def audit(req: AuditRequest):
         "scannedAt": result["scannedAt"],
         "score": result["score"],
         "scoreEstimated": result["scoreEstimated"],
+        "dgaScore": result.get("dgaScore"),
+        "uxScore": result.get("uxScore"),
         "durationSec": result["durationSec"],
         "tally": tally,
         "reportPath": result["screenshots"][0]["url"] if result["screenshots"] else None,

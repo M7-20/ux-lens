@@ -115,8 +115,15 @@ function Index() {
                 className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
               >
                 <div className="flex min-w-0 items-center gap-4">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-brand/8 font-mono text-sm font-bold text-brand transition group-hover:bg-brand group-hover:text-brand-foreground">
-                    {r.score}
+                  <div className="grid w-16 shrink-0 place-items-center gap-1 rounded-md bg-brand/8 py-1.5 transition group-hover:bg-brand">
+                    <div className="text-center leading-none">
+                      <div className="text-[9px] font-bold uppercase tracking-wide text-brand/70 transition group-hover:text-brand-foreground/70">DGA</div>
+                      <div dir="ltr" className="font-mono text-xs font-bold text-brand transition group-hover:text-brand-foreground">{r.dgaScore ?? r.score}%</div>
+                    </div>
+                    <div className="text-center leading-none">
+                      <div className="text-[9px] font-bold uppercase tracking-wide text-brand/70 transition group-hover:text-brand-foreground/70">General</div>
+                      <div dir="ltr" className="font-mono text-xs font-bold text-brand transition group-hover:text-brand-foreground">{r.uxScore != null ? `${r.uxScore}%` : "—"}</div>
+                    </div>
                   </div>
                   <div className="min-w-0">
                     <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">{r.url}</div>

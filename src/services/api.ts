@@ -108,6 +108,8 @@ export interface RecentAudit {
   url: string;
   scannedAt: string;
   score: number;
+  dgaScore?: number | null; // غير متوفر للفحوصات القديمة قبل حفظ هذا الحقل
+  uxScore?: number | null; // غير متوفر للفحوصات القديمة قبل تفعيل طبقة UX
 }
 
 export async function getRecentAudits(limit = 10): Promise<RecentAudit[]> {
