@@ -46,7 +46,7 @@ function Index() {
             افحص التزام موقعك <span className="text-brand">بمعايير الحكومة الرقمية</span>
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-            تدقيق آلي وفق 27 معياراً معتمداً من هيئة الحكومة الرقمية (DGA).
+            تدقيق آلي شامل وفق معايير هيئة الحكومة الرقمية (DGA) ومعايير تجربة المستخدم (UX).
           </p>
 
           <form
