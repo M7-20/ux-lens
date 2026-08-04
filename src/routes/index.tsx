@@ -112,27 +112,44 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
+                className="group flex items-center gap-4 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
               >
-                <div className="flex min-w-0 items-center gap-4">
-                  <div className="grid w-16 shrink-0 place-items-center gap-1 rounded-md bg-brand/8 py-1.5 transition group-hover:bg-brand">
-                    <div className="text-center leading-none">
-                      <div className="text-[9px] font-bold uppercase tracking-wide text-brand/70 transition group-hover:text-brand-foreground/70">DGA</div>
-                      <div dir="ltr" className="font-mono text-xs font-bold text-brand transition group-hover:text-brand-foreground">{r.dgaScore ?? r.score}%</div>
+                <div className="min-w-0 flex-1">
+                  <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
+                  </div>
+                </div>
+
+                <div className="w-32 shrink-0 space-y-1.5">
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                      <span className="uppercase tracking-wide">DGA</span>
+                      <span dir="ltr" className="font-mono tabular-nums text-ink">{r.dgaScore ?? r.score}%</span>
                     </div>
-                    <div className="text-center leading-none">
-                      <div className="text-[9px] font-bold uppercase tracking-wide text-brand/70 transition group-hover:text-brand-foreground/70">General</div>
-                      <div dir="ltr" className="font-mono text-xs font-bold text-brand transition group-hover:text-brand-foreground">{r.uxScore != null ? `${r.uxScore}%` : "—"}</div>
+                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${r.dgaScore ?? r.score}%`, background: tintForScore(r.dgaScore ?? r.score) }}
+                      />
                     </div>
                   </div>
-                  <div className="min-w-0">
-                    <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">{r.url}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
-                      {" · "}54 معيار
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                      <span className="uppercase tracking-wide">General</span>
+                      <span dir="ltr" className="font-mono tabular-nums text-ink">{r.uxScore != null ? `${r.uxScore}%` : "—"}</span>
+                    </div>
+                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
+                      {r.uxScore != null && (
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${r.uxScore}%`, background: tintForScore(r.uxScore) }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
+
                 <ScoreBadge score={r.score} />
               </button>
             ))}
@@ -163,6 +180,10 @@ function formatDuration(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+function tintForScore(score: number) {
+  return score >= 85 ? "var(--pass)" : score >= 70 ? "var(--warn)" : "var(--fail)";
 }
 
 function ScoreBadge({ score }: { score: number }) {
