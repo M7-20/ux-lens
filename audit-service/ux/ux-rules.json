@@ -2,8 +2,8 @@
   "_meta": {
     "source": "UX Lens Universal Guidelines",
     "rule_prefix": "UX",
-    "total_rules": 5,
-    "note": "المرحلة الأولى فقط — 5 من أصل 27 قاعدة UX عامة فريدة (لا تتداخل مع DGA وقابلة للفحص الآلي)، مخطَّط تفعيل الباقي لاحقاً."
+    "total_rules": 27,
+    "note": "27 قاعدة UX عامة فريدة (لا تتداخل مع DGA وقابلة للفحص الآلي) — 20 قابلة للفحص الكودي (detection=code)، 7 تحتاج تحليل بصري عبر Gemini (detection=visual)."
   },
   "rules": [
     {
@@ -12,7 +12,8 @@
       "severity": "Error",
       "title": "Missing Alt Text on Images",
       "description": "صور محتوى بلا نص بديل (alt) يعتمد عليه قارئ الشاشة.",
-      "recommendation": "أضف نص alt وصفي لكل صورة محتوى (أيقونات الزخرفة البحتة alt=\"\" تبقى استثناءً)."
+      "recommendation": "أضف نص alt وصفي لكل صورة محتوى (أيقونات الزخرفة البحتة alt=\"\" تبقى استثناءً).",
+      "detection": "code"
     },
     {
       "id": "IE-002",
@@ -20,7 +21,8 @@
       "severity": "Error",
       "title": "Insufficient Touch Target Size",
       "description": "عناصر تفاعلية (روابط/أزرار) أصغر من 44×44px، صعبة اللمس على الجوال.",
-      "recommendation": "اجعل الحد الأدنى لحجم أي عنصر تفاعلي 44×44px مع 8px تباعد عن أقرب عنصر آخر."
+      "recommendation": "اجعل الحد الأدنى لحجم أي عنصر تفاعلي 44×44px مع 8px تباعد عن أقرب عنصر آخر.",
+      "detection": "code"
     },
     {
       "id": "CD-001",
@@ -28,7 +30,8 @@
       "severity": "Warning",
       "title": "Footer Link Density",
       "description": "الفوتر يحتوي عدداً كبيراً جداً من الروابط المتلاصقة (أكثر من 30) بلا تنظيم واضح.",
-      "recommendation": "نظّم روابط الفوتر في 4-5 أعمدة بـ6-8 روابط لكل عمود."
+      "recommendation": "نظّم روابط الفوتر في 4-5 أعمدة بـ6-8 روابط لكل عمود.",
+      "detection": "code"
     },
     {
       "id": "FI-001",
@@ -36,7 +39,8 @@
       "severity": "Error",
       "title": "Missing Input Labels",
       "description": "حقول نموذج بلا تسمية (label) مرتبطة برمجياً — الاعتماد على placeholder وحده غير كافٍ.",
-      "recommendation": "أضف عنصر label مرتبط بـfor/id (أو aria-label) لكل حقل إدخال، ثابتاً وظاهراً بجانب الحقل."
+      "recommendation": "أضف عنصر label مرتبط بـfor/id (أو aria-label) لكل حقل إدخال، ثابتاً وظاهراً بجانب الحقل.",
+      "detection": "code"
     },
     {
       "id": "NW-001",
@@ -44,7 +48,213 @@
       "severity": "Error",
       "title": "No Current Location Indicator",
       "description": "رابط الصفحة الحالية في قائمة التنقل الرئيسية لا يحمل أي مؤشر بصري يميّزه عن باقي الروابط.",
-      "recommendation": "أضف aria-current=\"page\" أو صنف مميّز (active) لرابط الصفحة الحالية في التنقل."
+      "recommendation": "أضف aria-current=\"page\" أو صنف مميّز (active) لرابط الصفحة الحالية في التنقل.",
+      "detection": "code"
+    },
+    {
+      "id": "TR-004",
+      "category": "Typography & Readability",
+      "severity": "Info",
+      "title": "Too Many Font Families",
+      "description": "استخدام أكثر من 2-3 عائلات خط مختلفة في الصفحة.",
+      "recommendation": "اقتصر على عائلتي خط كحد أقصى: واحدة للعناوين وواحدة للنص الأساسي.",
+      "detection": "code"
+    },
+    {
+      "id": "NW-002",
+      "category": "Navigation & Wayfinding",
+      "severity": "Warning",
+      "title": "Missing Breadcrumbs",
+      "description": "الصفحات العميقة (أكثر من مستويين) لا تحتوي على مسار تصفح (breadcrumbs).",
+      "recommendation": "أضف مسار تصفح (breadcrumbs) للصفحات الأعمق من مستويين.",
+      "detection": "code"
+    },
+    {
+      "id": "NW-003",
+      "category": "Navigation & Wayfinding",
+      "severity": "Error",
+      "title": "Redundant Search Inputs",
+      "description": "أكثر من شريط بحث ظاهر في نفس الوقت.",
+      "recommendation": "وحّد البحث في شريط رئيسي واحد مع فلاتر عند الحاجة.",
+      "detection": "code"
+    },
+    {
+      "id": "NW-004",
+      "category": "Navigation & Wayfinding",
+      "severity": "Warning",
+      "title": "Overcrowded Navigation",
+      "description": "عدد كبير جداً من العناصر في التنقل الرئيسي (أكثر من 7±2).",
+      "recommendation": "اقتصر على 5-7 عناصر بالتنقل الرئيسي، واستخدم القوائم المنسدلة للتجميع.",
+      "detection": "code"
+    },
+    {
+      "id": "IE-003",
+      "category": "Interactive Elements",
+      "severity": "Warning",
+      "title": "Missing Hover/Focus States",
+      "description": "عناصر تفاعلية لا تُظهر أي تغيّر بصري عند المرور عليها (hover) أو التركيز (focus).",
+      "recommendation": "أضف حالة hover واضحة ومؤشر تركيز (focus) ظاهر بعرض 2px فأكثر.",
+      "detection": "code"
+    },
+    {
+      "id": "IE-004",
+      "category": "Interactive Elements",
+      "severity": "Warning",
+      "title": "Disabled State Unclear",
+      "description": "الأزرار/الحقول المعطّلة (disabled) غير مميّزة بصرياً بشكل كافٍ عن الحالة النشطة.",
+      "recommendation": "استخدم شفافية 40-50%، لون رمادي، وcursor: not-allowed للعناصر المعطّلة.",
+      "detection": "code"
+    },
+    {
+      "id": "FI-003",
+      "category": "Forms & Input",
+      "severity": "Warning",
+      "title": "No Input Constraints/Hints",
+      "description": "حقول تتطلب صيغة معيّنة (مثل كلمة المرور) دون توضيح متطلبات الصيغة.",
+      "recommendation": "أضف تلميحاً يوضّح متطلبات الصيغة أسفل الحقل، واستخدم أقنعة إدخال عند الحاجة.",
+      "detection": "code"
+    },
+    {
+      "id": "FI-004",
+      "category": "Forms & Input",
+      "severity": "Info",
+      "title": "Long Form Without Progress",
+      "description": "نماذج متعددة الخطوات لا تعرض مؤشر تقدّم.",
+      "recommendation": "أضف مؤشر خطوات أو شريط تقدّم للنماذج التي تتجاوز 3 خطوات.",
+      "detection": "code"
+    },
+    {
+      "id": "CD-003",
+      "category": "Content Density",
+      "severity": "Error",
+      "title": "Card/Component Overload",
+      "description": "عدد كبير جداً من البطاقات ظاهر دفعة واحدة بلا ترقيم صفحات أو فلترة.",
+      "recommendation": "اعرض 6-12 عنصراً كحد أولي مع ترقيم صفحات وفلترة.",
+      "detection": "code"
+    },
+    {
+      "id": "RS-001",
+      "category": "Responsiveness",
+      "severity": "Error",
+      "title": "Horizontal Overflow on Mobile",
+      "description": "محتوى يتجاوز عرض الشاشة على الجوال ويسبب تمرير أفقي.",
+      "recommendation": "استخدم صوراً متجاوبة، وتعامل مع فيض الجداول (overflow)، وتخطيطات مرنة.",
+      "detection": "code"
+    },
+    {
+      "id": "RS-002",
+      "category": "Responsiveness",
+      "severity": "Warning",
+      "title": "Unreadable Text on Mobile",
+      "description": "حجم النص صغير جداً أو كبير جداً على الجوال.",
+      "recommendation": "استخدم طباعة متجاوبة عبر clamp() أو media queries.",
+      "detection": "code"
+    },
+    {
+      "id": "A11-002",
+      "category": "Accessibility (a11y)",
+      "severity": "Error",
+      "title": "Missing Skip Navigation",
+      "description": "لا يوجد رابط \"تخطي إلى المحتوى\" لمستخدمي لوحة المفاتيح.",
+      "recommendation": "أضف رابط \"تخطي إلى المحتوى الرئيسي\" كأول عنصر قابل للتركيز في الصفحة.",
+      "detection": "code"
+    },
+    {
+      "id": "A11-003",
+      "category": "Accessibility (a11y)",
+      "severity": "Error",
+      "title": "Missing ARIA Labels",
+      "description": "أزرار تعتمد على أيقونة فقط بلا اسم يمكن للتقنيات المساعدة قراءته.",
+      "recommendation": "أضف aria-label لكل زر يعتمد على أيقونة فقط.",
+      "detection": "code"
+    },
+    {
+      "id": "A11-004",
+      "category": "Accessibility (a11y)",
+      "severity": "Warning",
+      "title": "Focus Order Mismatch",
+      "description": "ترتيب التنقل بلوحة المفاتيح (Tab) لا يطابق الترتيب البصري للعناصر.",
+      "recommendation": "تأكد من مطابقة ترتيب DOM للترتيب البصري، وتجنّب استخدام tabindex بقيمة موجبة.",
+      "detection": "code"
+    },
+    {
+      "id": "CS-001",
+      "category": "Consistency & Standards",
+      "severity": "Warning",
+      "title": "Inconsistent Button Styles",
+      "description": "أزرار بنفس نوع الإجراء تستخدم أنماطاً بصرية مختلفة.",
+      "recommendation": "عرّف نظام أزرار واضح: أساسي (مصمت)، ثانوي (محدّد)، نصّي.",
+      "detection": "code"
+    },
+    {
+      "id": "VH-001",
+      "category": "Visual Hierarchy & Layout",
+      "severity": "Error",
+      "title": "Missing Visual Hierarchy",
+      "description": "الصفحة تفتقر لتسلسل هرمي بصري واضح؛ لا يمكن تمييز المحتوى الأساسي عن الثانوي.",
+      "recommendation": "أنشئ 3-4 مستويات تسلسل هرمي طباعي بنِسَب حجم واضحة (1.25x-1.5x لكل مستوى).",
+      "detection": "visual",
+      "detection_visual": "لا يوجد تمايز في الحجم/الوزن/اللون بين العناوين والنص الأساسي."
+    },
+    {
+      "id": "VH-003",
+      "category": "Visual Hierarchy & Layout",
+      "severity": "Warning",
+      "title": "Z-Pattern/F-Pattern Violation",
+      "description": "محتوى أو أزرار دعوة لإجراء أساسية موضوعة خارج أنماط القراءة المعتادة.",
+      "recommendation": "ضع أزرار الدعوة لإجراء الرئيسية أعلى اليمين أو الوسط، واتّبع نمط F للصفحات كثيفة النص.",
+      "detection": "visual",
+      "detection_visual": "عنصر دعوة لإجراء أساسي في أسفل اليسار أو مناطق تُهمَل عادة في القراءة."
+    },
+    {
+      "id": "VH-004",
+      "category": "Visual Hierarchy & Layout",
+      "severity": "Info",
+      "title": "Alignment Inconsistency",
+      "description": "عناصر غير محاذاة لشبكة تصميم ثابتة.",
+      "recommendation": "حاذِ كل المحتوى لشبكة أعمدة محددة.",
+      "detection": "visual",
+      "detection_visual": "كتل نصية وبطاقات بحواف يسار مختلفة عن بعضها."
+    },
+    {
+      "id": "CC-002",
+      "category": "Color & Contrast",
+      "severity": "Error",
+      "title": "Color-Only Information Encoding",
+      "description": "معلومة تُنقَل عبر اللون فقط بدون مؤشر إضافي (أيقونة/نص).",
+      "recommendation": "اقرن اللون دائماً بمؤشر ثانوي: أيقونة، تسمية نصية، أو نمط.",
+      "detection": "visual",
+      "detection_visual": "حالات الخطأ تُعرض بحد أحمر فقط، أو الحقول الإلزامية تُميَّز باللون فقط دون رمز آخر."
+    },
+    {
+      "id": "IE-001",
+      "category": "Interactive Elements",
+      "severity": "Error",
+      "title": "Low Affordance",
+      "description": "عناصر قابلة للنقر تفتقر لمؤشرات بصرية تدل على أنها تفاعلية.",
+      "recommendation": "وفّر إيحاءً بصرياً واضحاً: لون مميز، تسطير للروابط، ظل/حدود للأزرار.",
+      "detection": "visual",
+      "detection_visual": "روابط بلا تسطير أو لون مميز، أزرار تبدو كنص عادي."
+    },
+    {
+      "id": "CD-002",
+      "category": "Content Density",
+      "severity": "Warning",
+      "title": "Information Overload",
+      "description": "الصفحة تعرض كماً كبيراً من المحتوى بلا فواصل بصرية.",
+      "recommendation": "قسّم المحتوى لأقسام قابلة للمسح البصري بعناوين وفراغات.",
+      "detection": "visual",
+      "detection_visual": "كتل نصية كثيفة بلا صور أو فراغات بيضاء."
+    },
+    {
+      "id": "CS-002",
+      "category": "Consistency & Standards",
+      "severity": "Warning",
+      "title": "Inconsistent Icon Style",
+      "description": "الأيقونات تمزج بين أنماط مفرغة، مصمتة، وثنائية اللون.",
+      "recommendation": "استخدم مجموعة أيقونات واحدة بنمط وحجم ثابتين.",
+      "detection": "visual",
+      "detection_visual": "بعض الأيقونات مفرغة الخط وأخرى مصمتة بأوزان خطوط متفاوتة."
     }
   ]
 }

@@ -64,13 +64,13 @@ RADIUS_TOKEN = {float(v): k for k, v in TOKENS["radius"].items()}
 ALLOWED_RADIUS = sorted(RADIUS_TOKEN)
 
 # ============================================================
-#  طبقة UX العامة (اختيارية) — معزولة بالكامل في ux/، لا تلمس منطق DGA أعلاه.
-#  موقوفة مؤقتاً (2026-08-03): سنعيد بناءها بشكل صحيح لاحقاً. ملفات ux/ باقية على حالها
-#  بلا حذف — لتفعيلها من جديد فقط أعد القيمة لـTrue.
+#  طبقة UX العامة — معزولة بالكامل في ux/، لا تلمس منطق DGA أعلاه.
+#  مفعّلة دائماً (2026-08-04) بعد اكتمال الـ27 قاعدة واختبارها حياً على naama.sa.
+#  تعطيلها مؤقتاً: أعد القيمة لـFalse (ملفات ux/ لا تُحذف، ترجع النتيجة لـ27 DGA فقط).
 #  حذفها نهائياً: احذف مجلد ux/ بالكامل + هذا السطر + نقطتَي "UX layer hook" أدناه
 #  (داخل capture_page وrun_audit) — لا أثر آخر على أي مكان في هذا الملف.
 # ============================================================
-ENABLE_UX_LAYER = False
+ENABLE_UX_LAYER = True
 BASE_UNIT = int(TOKENS["spacing"].get("base_unit", 4))
 SPC_EXTRA = {2.0, 6.0}
 ALLOWED_FS = sorted({d["size_px"] for d in TOKENS["typography"]["scale"].values()})
@@ -130,6 +130,7 @@ async def capture_page(url: str) -> dict:
     name = safe_name(url)
     shot = str(SHOTS_DIR / f"raw_{name}.png")
     ux_data = None
+    ux_mobile_data = None
     async with async_playwright() as p:
         b = await p.chromium.launch(args=["--no-sandbox"])
         pg = await b.new_page(viewport={"width": 1440, "height": 900})
@@ -394,16 +395,20 @@ async def capture_page(url: str) -> dict:
             }""".replace("__APPROVED__", APPROVED_FONT))
 
             # UX layer hook — نفس الصفحة المفتوحة، مسار جمع بيانات مستقل تماماً (ux/ux_checks.py).
+            # إعادة ضبط حجم نافذة العرض للجوال (لقواعد RS-*) تحدث هنا، بعد أن التقطت DGA لقطتها
+            # ومقاييسها بالكامل أعلاه — لا تؤثر على أي بيانات DGA محسوبة مسبقاً.
             if ENABLE_UX_LAYER:
-                from ux.ux_checks import gather_ux_data
+                from ux.ux_checks import gather_ux_data, gather_ux_mobile_data
                 ux_data = await gather_ux_data(pg)
+                ux_mobile_data = await gather_ux_mobile_data(pg)
         finally:
             await b.close()
 
     with Image.open(shot) as im:
         width, height = im.size
     return {"url": url, "name": name, "shot": shot, "shot_width": width, "shot_height": height,
-            "broken": broken, "imgs": imgs, "statusbar": statusbar, "colors": colors, "ux_data": ux_data, **m}
+            "broken": broken, "imgs": imgs, "statusbar": statusbar, "colors": colors,
+            "ux_data": ux_data, "ux_mobile_data": ux_mobile_data, **m}
 
 
 # ============ 2) الفحوص الكودية (CSS/DOM) ============
@@ -856,6 +861,10 @@ def score_of(rule_ids) -> int:
     return max(0, round(100 * (1 - lost / max(TOTAL_W, 1))))
 
 
+def grade_of(score: int) -> str:
+    return "A" if score >= 90 else "B" if score >= 75 else "C" if score >= 60 else "D"
+
+
 def region_from_box(box, W, H):
     x1, y1, x2, y2 = box
     return {
@@ -1072,7 +1081,14 @@ async def run_audit(url: str, gemini_api_key: str) -> dict:
     checks = run_checks(page)
 
     client = genai.Client(api_key=gemini_api_key)
-    vv, _on_imgs = await asyncio.to_thread(_run_visual_scan_sync, client, page)
+    ux_client = genai.Client(api_key=gemini_api_key)
+    dga_visual_task = asyncio.to_thread(_run_visual_scan_sync, client, page)
+    if ENABLE_UX_LAYER:
+        from ux.ux_visual_checks import run_ux_visual_checks
+        ux_visual_task = asyncio.to_thread(run_ux_visual_checks, ux_client, page)
+        (vv, _on_imgs), ux_visual_rules = await asyncio.gather(dga_visual_task, ux_visual_task)
+    else:
+        vv, _on_imgs = await dga_visual_task
 
     result = assemble_audit(url, page, checks, vv, elapsed=time.time() - t0)
 
@@ -1080,16 +1096,27 @@ async def run_audit(url: str, gemini_api_key: str) -> dict:
     # الخاصة بـDGA. تعطيل ENABLE_UX_LAYER يُلغي هذه الكتلة بالكامل فيرجع للنتيجة الأصلية.
     for r in result["rules"]:
         r["source"] = "DGA"
-    if ENABLE_UX_LAYER and page.get("ux_data"):
+    if ENABLE_UX_LAYER:
         from ux.ux_checks import RULE_BY_ID as UX_RULE_BY_ID
         from ux.ux_checks import WEIGHT as UX_WEIGHT
         from ux.ux_checks import run_ux_checks
-        ux_rules = run_ux_checks(page["ux_data"], page["shot_width"], page["shot_height"])
+        ux_rules = run_ux_checks(page.get("ux_data"), page["shot_width"], page["shot_height"], page.get("ux_mobile_data"))
+        ux_rules += ux_visual_rules
         if ux_rules:
             result["rules"].extend(ux_rules)
-            ux_total_w = sum(UX_WEIGHT[UX_RULE_BY_ID[r["id"]]["severity"]] for r in ux_rules)
+            # not_applicable/undetermined مستبعدة كلياً من معادلة النقاط (بسط ومقام) — لا تُحتسب
+            # كأنها اجتازت الفحص ولا كأنها فشلته؛ لا تخمين لنتيجة قاعدة لم تُقيَّم فعلياً.
+            scored = [r for r in ux_rules if r["status"] in ("pass", "fail", "warn")]
+            ux_total_w = sum(UX_WEIGHT[UX_RULE_BY_ID[r["id"]]["severity"]] for r in scored)
             ux_lost = sum(UX_WEIGHT[UX_RULE_BY_ID[r["id"]]["severity"]]
-                          for r in ux_rules if r["status"] not in ("pass", "manual_review"))
+                          for r in scored if r["status"] != "pass")
+            # نِسَب DGA وUX منفصلتان لعرض الواجهة (كل قسم يُقيَّم بمعزل عن الآخر) — تُلتقَط قبل
+            # حساب النسبة المدموجة أدناه، التي تبقى كما هي لأغراض التخزين/الدرجة الحرفية الحالية.
+            result["dgaScore"] = result["score"]
+            result["dgaScoreEstimated"] = result["scoreEstimated"]
+            result["dgaGrade"] = result["grade"]
+            result["uxScore"] = max(0, round(100 * (1 - ux_lost / ux_total_w))) if ux_total_w > 0 else None
+            result["uxGrade"] = grade_of(result["uxScore"]) if result["uxScore"] is not None else None
             for key in ("score", "scoreEstimated"):
                 dga_lost = TOTAL_W * (1 - result[key] / 100)
                 result[key] = max(0, round(100 * (1 - (dga_lost + ux_lost) / (TOTAL_W + ux_total_w))))

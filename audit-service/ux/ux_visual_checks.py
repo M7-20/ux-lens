@@ -1,0 +1,260 @@
+# طبقة القواعد البصرية لـ UX (تحتاج Gemini) — معزولة تماماً عن محرك DGA (engine.py).
+# لا شيء هنا يستورد من engine.py (لا VISUAL_RULES، لا CODE_CHECKED، لا build_prompt، لا Violation،
+# لا gen/to_box/dedup الخاصة بـ DGA) — كل الدوال المساعدة اللازمة مُعاد كتابتها محلياً هنا عمداً،
+# حتى لو تشابهت المنطق، حفاظاً على استقلالية كاملة: حذف هذا الملف + تعطيل ENABLE_UX_LAYER
+# لا يؤثران على DGA إطلاقاً. يستخدم نفس عميل Gemini (genai.Client) الممرَّر من engine.py —
+# إعادة استخدام الاتصال فقط، لا القواعد ولا البرومبت ولا منطق DGA.
+import hashlib
+import json
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from typing import Literal
+
+from google import genai
+from google.genai import errors, types
+from PIL import Image
+from pydantic import BaseModel
+
+from ux.ux_checks import RULE_BY_ID, UX_RULES, region_from_box
+
+BASE_DIR = Path(__file__).parent
+CACHE_PATH = BASE_DIR / "ux_site_cache.json"
+
+MODEL = "gemini-3.5-flash"
+TILE_HEIGHT = 1600
+OVERLAP = 200
+DEDUP_IOU = 0.5
+MAX_TILES = 4
+
+UX_VISUAL_RULES = [r for r in UX_RULES if r.get("detection") == "visual"]
+
+
+class UXViolation(BaseModel):
+    box_2d: list[int]
+    rule_id: str
+    severity: Literal["Error", "Warning", "Info"]
+    confidence: Literal["عالية", "متوسطة", "منخفضة"]
+    evidence: str
+    recommendation: str
+
+
+def build_ux_visual_prompt() -> str:
+    return f"""دقّق هذا الجزء من صفحة ويب مقابل مبادئ تجربة المستخدم (UX) العامة التالية باللغة العربية.
+هذه مبادئ عامة لأي موقع (لا علاقة لها بهوية بصرية محددة) — احكم على وضوح التسلسل الهرمي، التباين الوظيفي، وسهولة الاستخدام البصري.
+القواعد:
+{chr(10).join(f"- {r['id']} ({r['category']}, {r['severity']}): {r['title']} — {r.get('detection_visual', r['description'])}" for r in UX_VISUAL_RULES)}
+تنبيهات إلزامية — تمنع الأخطاء الشائعة على المواقع المختلفة:
+1. الصور الفوتوغرافية وصور الأخبار والمحتوى الإعلامي: محتواها ليس جزءاً من واجهة الموقع — لا تُبلّغ عن مخالفات داخلها.
+2. لا تُبلّغ عن عنصر بأنه "مفقود" إلا إذا فحصت الشريحة كاملة وتأكدت من غيابه.
+3. إن لم تكن متأكداً من مخالفة، اجعل confidence "منخفضة" أو لا تذكرها إطلاقاً — الدقة أهم من العدد.
+لكل مخالفة: box_2d [ymin,xmin,ymax,xmax] 0-1000 + rule_id + severity + confidence + evidence + recommendation.
+لا تُرجِع مخالفة بدون دليل بصري واضح في evidence."""
+
+
+PROMPT = build_ux_visual_prompt()
+RULES_SIG = hashlib.md5((MODEL + PROMPT).encode()).hexdigest()[:10]
+
+
+def _load_cache() -> dict:
+    return json.load(open(CACHE_PATH, encoding="utf-8")) if CACHE_PATH.exists() else {}
+
+
+def _save_cache(cache: dict) -> None:
+    tmp = CACHE_PATH.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False)
+    tmp.replace(CACHE_PATH)
+
+
+def gen(client: genai.Client, **kw):
+    for a in range(1, 5):
+        try:
+            return client.models.generate_content(**kw)
+        except (errors.ServerError, errors.ClientError) as e:
+            if not (isinstance(e, errors.ServerError) or getattr(e, "code", None) == 429) or a == 4:
+                raise
+            time.sleep(5 * a)
+
+
+def make_tiles(h, th, ov):
+    ys = range(0, max(h - ov, 1), th - ov)
+    return [(y, min(y + th, h)) for y in ys]
+
+
+def to_box(it, W, th, y0):
+    ymin, xmin, ymax, xmax = it["box_2d"]
+    if xmin > xmax:
+        xmin, xmax = xmax, xmin
+    if ymin > ymax:
+        ymin, ymax = ymax, ymin
+    bx = (int(xmin / 1000 * W), int(ymin / 1000 * th) + y0, int(xmax / 1000 * W), int(ymax / 1000 * th) + y0)
+    bw, bh = bx[2] - bx[0], bx[3] - bx[1]
+    if bw < 2 or bh < 2:
+        return None
+    if bh > 0.35 * th and bw < 0.20 * W and bh / max(bw, 1) > 4:
+        return None
+    if bw > 0.9 * W and bh < 12:
+        return None
+    return bx
+
+
+def overlap_frac(box, rects):
+    x1, y1, x2, y2 = box
+    area = max((x2 - x1) * (y2 - y1), 1)
+    best = 0.0
+    for b in rects:
+        ox = max(0, min(x2, b["x"] + b["w"]) - max(x1, b["x"]))
+        oy = max(0, min(y2, b["y"] + b["h"]) - max(y1, b["y"]))
+        if ox <= 0 or oy <= 0:
+            continue
+        best = max(best, ox * oy / area)
+    return best
+
+
+def on_broken(box, broken):
+    return overlap_frac(box, broken) >= 0.5
+
+
+def iou(a, b):
+    ox = max(0, min(a[2], b[2]) - max(a[0], b[0]))
+    oy = max(0, min(a[3], b[3]) - max(a[1], b[1]))
+    inter = ox * oy
+    if inter <= 0:
+        return 0.0
+    ua = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / max(ua, 1)
+
+
+def dedup(viols, thr):
+    conf_rank = {"عالية": 3, "متوسطة": 2, "منخفضة": 1}
+    kept = []
+    for v in sorted(viols, key=lambda v: -(v["box"][2] - v["box"][0]) * (v["box"][3] - v["box"][1])):
+        dup = next((k for k in kept if k["rule_id"] == v["rule_id"] and iou(k["box"], v["box"]) >= thr), None)
+        if dup:
+            if conf_rank.get(v["conf"], 0) > conf_rank.get(dup["conf"], 0):
+                dup["conf"], dup["rec"] = v["conf"], v["rec"]
+            continue
+        kept.append(dict(v))
+    return kept
+
+
+def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
+    """يُنفَّذ في thread منفصل (نفس أسلوب DGA) — لا يُستدعى مباشرة من كود async."""
+    if not UX_VISUAL_RULES:
+        return []
+
+    W, H = page["shot_width"], page["shot_height"]
+    th = TILE_HEIGHT
+    tiles = make_tiles(H, th, OVERLAP)
+    if len(tiles) > MAX_TILES:
+        th = -(-H // MAX_TILES) + OVERLAP
+        tiles = make_tiles(H, th, OVERLAP)
+
+    cache = _load_cache()
+    full_image = Image.open(page["shot"]).convert("RGB")
+
+    def analyze(i, y0, y1):
+        crop = full_image.crop((0, y0, W, y1))
+        key = f"{page['name']}|{W}x{H}|{i}|{RULES_SIG}|" + hashlib.md5(crop.tobytes()).hexdigest()[:10]
+        if key in cache:
+            return i, key, cache[key], True, True
+        tile_note = f"\n(هذه الشريحة {i + 1} من {len(tiles)} من صفحة طويلة)"
+        time.sleep(0.8 * i)
+        try:
+            r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
+                    config=types.GenerateContentConfig(
+                        system_instruction="Return violations as JSON array in Arabic. No masks. Max 10.",
+                        temperature=0, max_output_tokens=8192,
+                        response_mime_type="application/json", response_schema=list[UXViolation],
+                        thinking_config=types.ThinkingConfig(thinking_budget=0)))
+            items = json.loads(r.text)
+            ok = True
+        except Exception:
+            items, ok = [], False
+        return i, key, items, False, ok
+
+    with ThreadPoolExecutor(max_workers=min(4, len(tiles))) as ex:
+        results = sorted(ex.map(lambda a: analyze(*a), [(i, y0, y1) for i, (y0, y1) in enumerate(tiles)]))
+
+    fresh = [(k, it) for _, k, it, cached, _ok in results if not cached]
+    if fresh:
+        for k, it in fresh:
+            cache[k] = it
+        _save_cache(cache)
+
+    # لا نخمّن "pass" لقاعدة لم نتمكن من تحليلها فعلياً — إذا فشلت كل الشرائح (لا كاش ولا استدعاء
+    # ناجح)، الاستدعاء يرجع بلا نتائج، وrun_ux_visual_checks يُبلّغ "undetermined" بدل "pass".
+    any_success = any(ok for _, _, _, _, ok in results)
+
+    visual_ids = {r["id"] for r in UX_VISUAL_RULES}
+    vv = []
+    for i, _key, items, _cached, _ok in results:
+        y0, y1 = tiles[i]
+        for it in items:
+            rid = it.get("rule_id", "")
+            if rid not in visual_ids:
+                continue
+            box = to_box(it, W, y1 - y0, y0)
+            if not box:
+                continue
+            if on_broken(box, page.get("broken", [])):
+                continue
+            vv.append({"box": box, "rule_id": rid, "sev": it["severity"],
+                       "conf": it["confidence"], "rec": it.get("recommendation"),
+                       "evidence": it.get("evidence")})
+
+    return dedup(vv, DEDUP_IOU), any_success
+
+
+def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
+    """يرجع قائمة نتائج بنفس شكل مخرجات run_ux_checks (id/category/status/title/description/
+    recommendation/evidence/region/source='UX') — لكل الـ7 قواعد البصرية دائماً، بلا أي استدعاء لكود DGA.
+    إذا فشل التحليل البصري بالكامل، القواعد السبع تُبلَّغ 'undetermined' لا 'pass' — لا تخمين."""
+    W, H = page["shot_width"], page["shot_height"]
+    out: list[dict] = []
+
+    if not UX_VISUAL_RULES:
+        return out
+
+    findings, any_success = _scan_sync(client, page)
+
+    if not any_success:
+        for r in UX_VISUAL_RULES:
+            out.append({
+                "id": r["id"], "category": r["category"], "status": "undetermined",
+                "title": r["title"], "description": r["description"],
+                "recommendation": r.get("recommendation"),
+                "evidence": "تعذّر تحليل الصفحة بصرياً عبر Gemini لتقييم هذه القاعدة (فشل الاتصال أو التحليل في كل الشرائح).",
+                "region": None, "source": "UX",
+            })
+        return out
+
+    by_rule: dict[str, list[dict]] = {}
+    for v in findings:
+        by_rule.setdefault(v["rule_id"], []).append(v)
+
+    for r in UX_VISUAL_RULES:
+        items = by_rule.get(r["id"], [])
+        violated = bool(items)
+        status = "pass" if not violated else ("fail" if r["severity"] == "Error" else "warn")
+        region = region_from_box_pixels(items[0]["box"], W, H) if violated else None
+        evidence = items[0].get("evidence") if violated else None
+        if violated and len(items) > 1:
+            evidence = f"{evidence} (+{len(items) - 1} مواضع أخرى)" if evidence else f"{len(items)} مواضع"
+        recommendation = r.get("recommendation")
+        if violated and items[0].get("rec"):
+            recommendation = items[0]["rec"]
+        out.append({
+            "id": r["id"], "category": r["category"], "status": status,
+            "title": r["title"], "description": r["description"],
+            "recommendation": recommendation,
+            "evidence": evidence, "region": region,
+            "source": "UX",
+        })
+    return out
+
+
+def region_from_box_pixels(box, W, H):
+    x1, y1, x2, y2 = box
+    return region_from_box({"x": x1, "y": y1, "w": x2 - x1, "h": y2 - y1}, W, H)
