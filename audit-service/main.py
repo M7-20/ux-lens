@@ -51,6 +51,10 @@ async def audit(req: AuditRequest):
     tally = {"pass": 0, "warn": 0, "fail": 0, "manual_review": 0}
     for r in result["rules"]:
         tally[r["status"]] = tally.get(r["status"], 0) + 1
+    dga_rules = [r for r in result["rules"] if r.get("source") != "UX"]
+    ux_rules = [r for r in result["rules"] if r.get("source") == "UX"]
+    dga_pass_count = sum(1 for r in dga_rules if r["status"] == "pass")
+    ux_pass_count = sum(1 for r in ux_rules if r["status"] == "pass")
     store.save_audit({
         "url": result["url"],
         "scannedAt": result["scannedAt"],
@@ -58,6 +62,10 @@ async def audit(req: AuditRequest):
         "scoreEstimated": result["scoreEstimated"],
         "dgaScore": result.get("dgaScore"),
         "uxScore": result.get("uxScore"),
+        "dgaPassCount": dga_pass_count,
+        "dgaTotalCount": len(dga_rules),
+        "uxPassCount": ux_pass_count,
+        "uxTotalCount": len(ux_rules),
         "durationSec": result["durationSec"],
         "tally": tally,
         "reportPath": result["screenshots"][0]["url"] if result["screenshots"] else None,

@@ -121,17 +121,24 @@ function Index() {
                   </div>
                 </div>
 
-                <div className="w-32 shrink-0 space-y-1.5">
+                <div className="w-40 shrink-0 space-y-1.5">
                   <div>
                     <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
                       <span className="uppercase tracking-wide">DGA</span>
                       <span dir="ltr" className="font-mono tabular-nums text-ink">{r.dgaScore ?? r.score}%</span>
                     </div>
-                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
-                      />
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-hairline">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
+                        />
+                      </div>
+                      {r.dgaTotalCount != null && (
+                        <span dir="ltr" className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                          {r.dgaPassCount}/{r.dgaTotalCount}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -139,12 +146,19 @@ function Index() {
                       <span className="uppercase tracking-wide">General</span>
                       <span dir="ltr" className="font-mono tabular-nums text-ink">{r.uxScore != null ? `${r.uxScore}%` : "—"}</span>
                     </div>
-                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
-                      {r.uxScore != null && (
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${r.uxScore}%`, background: "var(--brand)" }}
-                        />
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-hairline">
+                        {r.uxScore != null && (
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${r.uxScore}%`, background: "var(--brand)" }}
+                          />
+                        )}
+                      </div>
+                      {r.uxTotalCount != null && (
+                        <span dir="ltr" className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                          {r.uxPassCount}/{r.uxTotalCount}
+                        </span>
                       )}
                     </div>
                   </div>

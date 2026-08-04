@@ -110,6 +110,10 @@ export interface RecentAudit {
   score: number;
   dgaScore?: number | null; // غير متوفر للفحوصات القديمة قبل حفظ هذا الحقل
   uxScore?: number | null; // غير متوفر للفحوصات القديمة قبل تفعيل طبقة UX
+  dgaPassCount?: number | null;
+  dgaTotalCount?: number | null;
+  uxPassCount?: number | null;
+  uxTotalCount?: number | null;
 }
 
 export async function getRecentAudits(limit = 10): Promise<RecentAudit[]> {
