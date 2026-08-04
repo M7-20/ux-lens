@@ -112,44 +112,41 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center justify-between gap-3 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
+                className="group flex flex-col gap-3 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
               >
-                {/* الموقع والتاريخ */}
-                <div className="min-w-0 max-w-[30%]">
-                  <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">
-                    {r.url.replace(/^https?:\/\//, "")}
+                {/* الصف الأول: الرابط والتاريخ يمين + الحالة يسار */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">
+                      {r.url.replace(/^https?:\/\//, "")}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground/70">
+                      <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground/70">
-                    <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
-                  </div>
+                  <ScoreBadge score={r.score} />
                 </div>
 
-                {/* نسب DGA وGeneral */}
-                <div className="w-36 shrink-0 space-y-2 border-l border-hairline pl-4">
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">DGA</div>
-                    <div dir="ltr" className="mt-0.5 font-mono text-xs font-bold text-ink">
-                      {r.dgaScore ?? r.score}%
-                      {r.dgaTotalCount != null && (
-                        <span className="font-normal text-muted-foreground"> ({r.dgaPassCount}/{r.dgaTotalCount})</span>
-                      )}
-                    </div>
-                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-hairline">
+                {/* الصف الثاني: شريطا DGA وGeneral بعرض كامل */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">DGA</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-hairline">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">General</div>
-                    <div dir="ltr" className="mt-0.5 font-mono text-xs font-bold text-ink">
-                      {r.uxScore != null ? `${r.uxScore}%` : "—"}
-                      {r.uxTotalCount != null && (
-                        <span className="font-normal text-muted-foreground"> ({r.uxPassCount}/{r.uxTotalCount})</span>
+                    <span dir="ltr" className="shrink-0 font-mono text-xs font-bold text-ink">
+                      {r.dgaScore ?? r.score}%
+                      {r.dgaTotalCount != null && (
+                        <span className="font-normal text-muted-foreground"> ({r.dgaPassCount}/{r.dgaTotalCount})</span>
                       )}
-                    </div>
-                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-hairline">
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">General</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-hairline">
                       {r.uxScore != null && (
                         <div
                           className="h-full rounded-full transition-all"
@@ -157,11 +154,14 @@ function Index() {
                         />
                       )}
                     </div>
+                    <span dir="ltr" className="shrink-0 font-mono text-xs font-bold text-ink">
+                      {r.uxScore != null ? `${r.uxScore}%` : "—"}
+                      {r.uxTotalCount != null && (
+                        <span className="font-normal text-muted-foreground"> ({r.uxPassCount}/{r.uxTotalCount})</span>
+                      )}
+                    </span>
                   </div>
                 </div>
-
-                {/* الحالة */}
-                <ScoreBadge score={r.score} />
               </button>
             ))}
             {recent.length === 0 && (
