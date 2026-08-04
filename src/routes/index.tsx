@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, Globe, ListChecks } from "lucide-react";
+import { ArrowLeft, Clock, Globe } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
@@ -124,26 +124,23 @@ function Index() {
                   </div>
                 </div>
 
-                {/* ملخص عدد القواعد */}
-                <div className="flex shrink-0 flex-col items-center gap-1.5 border-l border-hairline pl-4">
-                  <div className="flex items-center gap-1 text-sm font-bold text-brand">
-                    <ListChecks className="h-4 w-4" />
-                    54 <span className="font-normal text-muted-foreground">Rules</span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <div className="w-14 rounded-md border border-brand/20 bg-brand/5 py-1 text-center">
-                      <div className="font-mono text-xs font-bold text-brand">27</div>
-                      <div className="text-[9px] font-bold uppercase text-muted-foreground">General</div>
-                    </div>
-                    <div className="w-14 rounded-md border border-brand/20 bg-brand/5 py-1 text-center">
-                      <div className="font-mono text-xs font-bold text-brand">27</div>
-                      <div className="text-[9px] font-bold uppercase text-muted-foreground">DGA</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* نسب General وDGA */}
+                {/* نسب DGA وGeneral */}
                 <div className="w-36 shrink-0 space-y-2 border-l border-hairline pl-4">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">DGA</div>
+                    <div dir="ltr" className="mt-0.5 font-mono text-xs font-bold text-ink">
+                      {r.dgaScore ?? r.score}%
+                      {r.dgaTotalCount != null && (
+                        <span className="font-normal text-muted-foreground"> ({r.dgaPassCount}/{r.dgaTotalCount})</span>
+                      )}
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-hairline">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
+                      />
+                    </div>
+                  </div>
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">General</div>
                     <div dir="ltr" className="mt-0.5 font-mono text-xs font-bold text-ink">
@@ -159,21 +156,6 @@ function Index() {
                           style={{ width: `${r.uxScore}%`, background: "var(--brand)" }}
                         />
                       )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">DGA</div>
-                    <div dir="ltr" className="mt-0.5 font-mono text-xs font-bold text-ink">
-                      {r.dgaScore ?? r.score}%
-                      {r.dgaTotalCount != null && (
-                        <span className="font-normal text-muted-foreground"> ({r.dgaPassCount}/{r.dgaTotalCount})</span>
-                      )}
-                    </div>
-                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-hairline">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
-                      />
                     </div>
                   </div>
                 </div>
