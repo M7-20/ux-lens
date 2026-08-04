@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, Globe } from "lucide-react";
+import { ArrowLeft, Clock, Globe, ListChecks } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
@@ -112,54 +112,74 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex flex-col gap-3 rounded-md border border-hairline bg-white px-4 py-3 text-right transition hover:border-brand/40"
+                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white px-4 py-3 text-right transition hover:border-brand/40"
               >
-                {/* الصف الأول: الرابط والتاريخ يمين + الحالة يسار */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">
-                      {r.url.replace(/^https?:\/\//, "")}
-                    </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground/70">
-                      <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
-                    </div>
+                {/* العمود الثالث (يمين): الرابط + التاريخ + الحالة */}
+                <div className="min-w-0">
+                  <div dir="ltr" className="truncate font-mono text-sm font-semibold text-ink">
+                    {r.url.replace(/^https?:\/\//, "")}
                   </div>
-                  <ScoreBadge score={r.score} />
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    <span dir="ltr">{new Date(r.scannedAt).toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" })}</span>
+                  </div>
+                  <div className="mt-1.5">
+                    <ScoreBadge score={r.score} />
+                  </div>
                 </div>
 
-                {/* الصف الثاني: شريطا DGA وGeneral بعرض كامل */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">DGA</span>
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-hairline">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
-                      />
-                    </div>
-                    <span dir="ltr" className="shrink-0 font-mono text-xs font-bold text-ink">
-                      {r.dgaScore ?? r.score}%
-                      {r.dgaTotalCount != null && (
-                        <span className="font-normal text-muted-foreground"> ({r.dgaPassCount}/{r.dgaTotalCount})</span>
-                      )}
-                    </span>
+                {/* العمود الثاني (وسط): معلومة المعايير */}
+                <div className="flex shrink-0 flex-col items-center gap-1.5 border-r border-hairline pr-4">
+                  <div className="flex items-center gap-1 text-sm font-bold text-brand">
+                    <ListChecks className="h-4 w-4" />
+                    54 <span className="font-normal text-muted-foreground">Rules</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="w-16 shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">General</span>
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-hairline">
-                      {r.uxScore != null && (
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${r.uxScore}%`, background: "var(--brand)" }}
-                        />
+                  <div className="flex gap-1.5">
+                    <div className="w-14 rounded-md border border-brand/20 bg-brand/5 py-1 text-center">
+                      <div className="font-mono text-xs font-bold text-brand">27</div>
+                      <div className="text-[9px] font-bold uppercase text-muted-foreground">General</div>
+                    </div>
+                    <div className="w-14 rounded-md border border-brand/20 bg-brand/5 py-1 text-center">
+                      <div className="font-mono text-xs font-bold text-brand">27</div>
+                      <div className="text-[9px] font-bold uppercase text-muted-foreground">DGA</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* العمود الأول (يسار): شريطا التقدم */}
+                <div className="w-36 shrink-0 space-y-2">
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                      <span className="uppercase tracking-wide">General</span>
+                      <span dir="ltr" className="font-mono tabular-nums text-ink">{r.uxScore != null ? `${r.uxScore}%` : "—"}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-hairline">
+                        {r.uxScore != null && (
+                          <div className="h-full rounded-full transition-all" style={{ width: `${r.uxScore}%`, background: "var(--brand)" }} />
+                        )}
+                      </div>
+                      {r.uxTotalCount != null && (
+                        <span dir="ltr" className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                          {r.uxPassCount}/{r.uxTotalCount}
+                        </span>
                       )}
                     </div>
-                    <span dir="ltr" className="shrink-0 font-mono text-xs font-bold text-ink">
-                      {r.uxScore != null ? `${r.uxScore}%` : "—"}
-                      {r.uxTotalCount != null && (
-                        <span className="font-normal text-muted-foreground"> ({r.uxPassCount}/{r.uxTotalCount})</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                      <span className="uppercase tracking-wide">DGA</span>
+                      <span dir="ltr" className="font-mono tabular-nums text-ink">{r.dgaScore ?? r.score}%</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-hairline">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }} />
+                      </div>
+                      {r.dgaTotalCount != null && (
+                        <span dir="ltr" className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                          {r.dgaPassCount}/{r.dgaTotalCount}
+                        </span>
                       )}
-                    </span>
+                    </div>
                   </div>
                 </div>
               </button>
