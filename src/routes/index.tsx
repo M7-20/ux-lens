@@ -112,7 +112,7 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex flex-col gap-3 rounded-md border border-hairline bg-white p-4 text-right transition hover:border-brand/40"
+                className="group flex flex-col gap-3 rounded-md border border-hairline bg-white px-4 py-3 text-right transition hover:border-brand/40"
               >
                 {/* الصف الأول: الرابط والتاريخ يمين + الحالة يسار */}
                 <div className="flex items-center justify-between gap-3">
