@@ -130,7 +130,7 @@ function Index() {
                     <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${r.dgaScore ?? r.score}%`, background: tintForScore(r.dgaScore ?? r.score) }}
+                        style={{ width: `${r.dgaScore ?? r.score}%`, background: "var(--brand)" }}
                       />
                     </div>
                   </div>
@@ -143,7 +143,7 @@ function Index() {
                       {r.uxScore != null && (
                         <div
                           className="h-full rounded-full transition-all"
-                          style={{ width: `${r.uxScore}%`, background: tintForScore(r.uxScore) }}
+                          style={{ width: `${r.uxScore}%`, background: "var(--brand)" }}
                         />
                       )}
                     </div>
@@ -180,10 +180,6 @@ function formatDuration(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
-
-function tintForScore(score: number) {
-  return score >= 85 ? "var(--pass)" : score >= 70 ? "var(--warn)" : "var(--fail)";
 }
 
 function ScoreBadge({ score }: { score: number }) {
