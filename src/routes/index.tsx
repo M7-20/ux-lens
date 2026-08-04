@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, Globe } from "lucide-react";
+import { ArrowLeft, Clock, Globe, ListChecks } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
@@ -160,6 +160,23 @@ function Index() {
                           {r.uxPassCount}/{r.uxTotalCount}
                         </span>
                       )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-center gap-1.5 border-r border-hairline pr-4">
+                  <div className="flex items-center gap-1 text-sm font-bold text-brand">
+                    <ListChecks className="h-4 w-4" />
+                    54 <span className="font-normal text-muted-foreground">Rules</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <div className="rounded-md border border-brand/20 bg-brand/5 px-2 py-1 text-center">
+                      <div className="font-mono text-xs font-bold text-brand">27</div>
+                      <div className="text-[9px] font-bold uppercase text-muted-foreground">UX</div>
+                    </div>
+                    <div className="rounded-md border border-brand/20 bg-brand/5 px-2 py-1 text-center">
+                      <div className="font-mono text-xs font-bold text-brand">27</div>
+                      <div className="text-[9px] font-bold uppercase text-muted-foreground">DGA</div>
                     </div>
                   </div>
                 </div>
