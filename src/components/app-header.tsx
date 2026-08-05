@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 export function AppLogo({ size = 40 }: { size?: number }) {
-  return <img src="/logo.svg" alt="" width={size} height={size} style={{ width: size, height: size }} aria-hidden />;
+  return <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={size} height={size} style={{ width: size, height: size }} aria-hidden />;
 }
 
 export function AppHeader() {

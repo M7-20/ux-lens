@@ -5,6 +5,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  Link,
 } from "@tanstack/react-router";
 import { type ReactNode } from "react";
 
@@ -18,9 +19,9 @@ function NotFoundComponent() {
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold">الصفحة غير موجودة</h2>
         <p className="mt-2 text-sm text-muted-foreground">الرابط المطلوب غير متاح.</p>
-        <a href="/" className="mt-6 inline-flex rounded-md bg-brand px-4 py-2 text-sm text-brand-foreground hover:opacity-90">
+        <Link to="/" className="mt-6 inline-flex rounded-md bg-brand px-4 py-2 text-sm text-brand-foreground hover:opacity-90">
           العودة للرئيسية
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -59,7 +60,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/logo.svg", type: "image/svg+xml" },
+      { rel: "icon", href: `${import.meta.env.BASE_URL}logo.svg`, type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" },

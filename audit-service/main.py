@@ -8,7 +8,7 @@ load_dotenv()
 
 import engine
 import store
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -24,19 +24,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/shots", StaticFiles(directory=str(engine.SHOTS_DIR)), name="shots")
+# كل شي تحت /api — البوابة (nginx) تشيل بادئة /uxlens وتترك /api/... كما هي
+# (waha ONBOARDING.md §1: "proxy_pass http://127.0.0.1:<PORT>/api/;")
+app.mount("/api/shots", StaticFiles(directory=str(engine.SHOTS_DIR)), name="shots")
+api = APIRouter(prefix="/api")
 
 
 class AuditRequest(BaseModel):
     url: str
 
 
-@app.get("/health")
+@api.get("/health")
 def health():
     return {"ok": True, "gemini_key_set": bool(GEMINI_API_KEY)}
 
 
-@app.post("/audit")
+@api.post("/audit")
 async def audit(req: AuditRequest):
     if not GEMINI_API_KEY:
         raise HTTPException(500, "GEMINI_API_KEY غير مضبوط — عدّل ملف audit-service/.env")
@@ -73,11 +76,14 @@ async def audit(req: AuditRequest):
     return result
 
 
-@app.get("/audits/recent")
+@api.get("/audits/recent")
 def recent_audits(limit: int = 10):
     return store.recent(limit)
 
 
-@app.get("/stats")
+@api.get("/stats")
 def stats():
     return store.stats()
+
+
+app.include_router(api)

@@ -69,7 +69,13 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "Accessibility": "إمكانية الوصول",
 };
 
-const AUDIT_SERVICE_URL = import.meta.env.VITE_AUDIT_SERVICE_URL ?? "http://localhost:8000";
+// Same-origin relative once a real base path is configured (waha ONBOARDING.md §2: "never
+// an absolute origin") — resolves to e.g. "/uxlens/api" behind the platform gateway. Plain
+// local dev (no VITE_BASE_PATH, BASE_URL stays "/") keeps the original absolute default,
+// since the frontend (:8080) and backend (:8000) are separate origins with no gateway in
+// front of them. VITE_AUDIT_SERVICE_URL always wins when set, for either case.
+const AUDIT_SERVICE_URL = import.meta.env.VITE_AUDIT_SERVICE_URL
+  ?? (import.meta.env.BASE_URL === "/" ? "http://localhost:8000/api" : `${import.meta.env.BASE_URL}api`);
 
 // The real audit takes 1-2 minutes (Playwright capture + Gemini visual scan).
 // "/scanning" triggers the real call and "/results" re-requests the same url —
