@@ -788,7 +788,8 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
                         system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
                         temperature=0, max_output_tokens=8192,
                         response_mime_type="application/json", response_schema=list[Violation],
-                        thinking_config=types.ThinkingConfig(thinking_budget=0)))
+                        thinking_config=types.ThinkingConfig(thinking_budget=0),
+                        http_options=types.HttpOptions(timeout=30000)))
             items = json.loads(r.text)
         except Exception:
             items = []
