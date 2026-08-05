@@ -19,7 +19,9 @@ from pydantic import BaseModel
 from ux.ux_checks import RULE_BY_ID, UX_RULES, region_from_box
 
 BASE_DIR = Path(__file__).parent
-CACHE_PATH = BASE_DIR / "ux_site_cache.json"
+DATA_DIR = BASE_DIR.parent / "data"
+DATA_DIR.mkdir(exist_ok=True)
+CACHE_PATH = DATA_DIR / "ux_site_cache.json"
 
 MODEL = "gemini-3.5-flash"
 TILE_HEIGHT = 1600

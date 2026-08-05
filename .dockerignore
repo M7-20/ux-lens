@@ -1,0 +1,8 @@
+node_modules
+audit-service
+.git
+.output
+.wrangler
+.tanstack
+dist
+*.log

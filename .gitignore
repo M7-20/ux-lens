@@ -25,11 +25,10 @@ package-lock.json
 
 # Python audit service
 audit-service/venv/
-audit-service/__pycache__/
+audit-service/**/__pycache__/
 audit-service/.env
 audit-service/shots/
-audit-service/site_cache.json
-audit-service/audits_history.json
+audit-service/data/
 
 # Editor directories and files
 .vscode/*

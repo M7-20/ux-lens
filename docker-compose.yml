@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: ./audit-service
+    env_file: ./audit-service/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - shots:/app/shots
+      - data:/app/data
+    shm_size: "1gb"
+
+  frontend:
+    build:
+      context: .
+      args:
+        VITE_BASE_PATH: /uxlens/
+        VITE_AUDIT_SERVICE_URL: http://localhost:8000/api
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  shots:
+  data:

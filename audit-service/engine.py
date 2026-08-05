@@ -34,8 +34,10 @@ if not logger.handlers:
 
 BASE_DIR = Path(__file__).parent
 SHOTS_DIR = BASE_DIR / "shots"
-CACHE_PATH = BASE_DIR / "site_cache.json"
+DATA_DIR = BASE_DIR / "data"
+CACHE_PATH = DATA_DIR / "site_cache.json"
 SHOTS_DIR.mkdir(exist_ok=True)
+DATA_DIR.mkdir(exist_ok=True)
 
 APPROVED_FONT = "IBM Plex Sans Arabic"
 TILE_HEIGHT = 1600

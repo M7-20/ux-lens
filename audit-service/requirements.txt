@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-playwright
+playwright==1.61.0
 pillow
 google-genai
 pydantic

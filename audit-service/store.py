@@ -6,7 +6,9 @@ import statistics
 from pathlib import Path
 from threading import Lock
 
-HISTORY_PATH = Path(__file__).parent / "audits_history.json"
+DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR.mkdir(exist_ok=True)
+HISTORY_PATH = DATA_DIR / "audits_history.json"
 _lock = Lock()
 
 
