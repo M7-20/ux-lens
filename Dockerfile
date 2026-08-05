@@ -12,6 +12,10 @@ ARG VITE_AUDIT_SERVICE_URL
 ENV VITE_BASE_PATH=${VITE_BASE_PATH}
 ENV VITE_AUDIT_SERVICE_URL=${VITE_AUDIT_SERVICE_URL}
 ENV NITRO_PRESET=node-server
+# لازم وقت البناء أيضاً، مو بس وقت التشغيل — تسجيل مسارات public/ الثابتة (CSS، الصور)
+# يُحسم وقت `vite build` نفسه؛ بدونه الملفات تُخدَم من الجذر بينما الـHTML يطلبها
+# تحت البادئة، فتفشل 404.
+ENV NITRO_APP_BASE_URL=${VITE_BASE_PATH}
 
 RUN npx vite build
 
