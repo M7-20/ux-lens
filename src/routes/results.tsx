@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, MapPin, Loader2, HelpCircle, Globe, Clock } from "lucide-react";
+import { ArrowRight, ChevronDown, Check, AlertTriangle, X, Download, RefreshCw, Monitor, Tablet, Smartphone, MapPin, Loader2, HelpCircle, MinusCircle, Globe, Clock } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
-import { getAudit, CATEGORY_LABELS, type Audit, type Rule, type Status, type Screenshot } from "@/services/api";
+import { getAudit, CATEGORY_LABELS, UX_CATEGORY_LABELS, type Audit, type Rule, type RuleSource, type Status, type Screenshot } from "@/services/api";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({ url: z.string() });
@@ -16,19 +16,21 @@ export const Route = createFileRoute("/results")({
       { title: "UX LENS — نتائج الفحص" },
       { name: "description", content: "تقرير امتثال الموقع الحكومي لمعايير هيئة الحكومة الرقمية." },
       { property: "og:title", content: "UX LENS — نتائج الفحص" },
-      { property: "og:description", content: "تقرير مفصّل يعرض 27 معيارًا مع التوصيات." },
+      { property: "og:description", content: "تقرير مفصّل يعرض معايير DGA وقواعد UX العامة مع التوصيات." },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: Results,
 });
 
-const SEVERITY: Record<Status, number> = { fail: 0, warn: 1, manual_review: 2, pass: 3 };
+const SEVERITY: Record<Status, number> = { fail: 0, warn: 1, manual_review: 2, undetermined: 3, pass: 4, not_applicable: 5 };
+const SOURCE_LABELS: Record<RuleSource, string> = { DGA: "DGA", UX: "General" };
 
 function Results() {
   const { url } = Route.useSearch();
   const [audit, setAudit] = useState<Audit | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [activeSource, setActiveSource] = useState<RuleSource>("DGA");
   const [filter, setFilter] = useState<"all" | Status>("all");
   const [activeShot, setActiveShot] = useState(0);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
@@ -45,11 +47,14 @@ function Results() {
     return () => { active = false; };
   }, [url]);
 
+  const dgaRules = useMemo(() => audit?.rules.filter((r) => r.source !== "UX") ?? [], [audit]);
+  const uxRules = useMemo(() => audit?.rules.filter((r) => r.source === "UX") ?? [], [audit]);
+  const sourceRules = activeSource === "UX" ? uxRules : dgaRules;
+
   const rules = useMemo(() => {
-    if (!audit) return [];
-    const sorted = [...audit.rules].sort((a, b) => SEVERITY[a.status] - SEVERITY[b.status] || a.id.localeCompare(b.id));
+    const sorted = [...sourceRules].sort((a, b) => SEVERITY[a.status] - SEVERITY[b.status] || a.id.localeCompare(b.id));
     return filter === "all" ? sorted : sorted.filter((r) => r.status === filter);
-  }, [audit, filter]);
+  }, [sourceRules, filter]);
 
   const selectedRule = useMemo(
     () => audit?.rules.find((r) => r.id === selectedRuleId) ?? null,
@@ -59,19 +64,34 @@ function Results() {
   const regionRules = useMemo(() => rules.filter((r) => r.region), [rules]);
 
   const tally = useMemo(() => {
-    if (!audit) return { pass: 0, warn: 0, fail: 0, manual_review: 0 };
-    return audit.rules.reduce(
-      (acc, r) => ({ ...acc, [r.status]: acc[r.status] + 1 }),
-      { pass: 0, warn: 0, fail: 0, manual_review: 0 }
+    return sourceRules.reduce(
+      (acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }),
+      { pass: 0, warn: 0, fail: 0, manual_review: 0, not_applicable: 0, undetermined: 0 }
     );
-  }, [audit]);
+  }, [sourceRules]);
+
+  // ثابتتان بغض النظر عن التبويب النشط — عشان الشريط العلوي ما يتغيّر شكله ولا يعيد ترتيب
+  // نفسه كل ما بدّلت تبويب، بدون دمج أرقام DGA وUX ببعض (كل مصدر بعدّاده المستقل بالشريط).
+  const emptyStatusCount = { pass: 0, warn: 0, fail: 0, manual_review: 0, not_applicable: 0, undetermined: 0 };
+  const dgaTally = useMemo(
+    () => dgaRules.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), { ...emptyStatusCount }),
+    [dgaRules]
+  );
+  const uxTally = useMemo(
+    () => uxRules.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), { ...emptyStatusCount }),
+    [uxRules]
+  );
 
 
-  function handleActivateRule(rule: Rule) {
-    setSelectedRuleId((id) => (id === rule.id ? null : rule.id));
-    if (rule.region && audit) {
-      const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
-      if (desktopIndex >= 0) setActiveShot(desktopIndex);
+  function handleActivateRule(rule: Rule, nextOpen: boolean) {
+    if (nextOpen) {
+      setSelectedRuleId(rule.id);
+      if (rule.region && audit) {
+        const desktopIndex = audit.screenshots.findIndex((s) => s.viewport === "desktop");
+        if (desktopIndex >= 0) setActiveShot(desktopIndex);
+      }
+    } else {
+      setSelectedRuleId((id) => (id === rule.id ? null : id));
     }
   }
 
@@ -112,7 +132,8 @@ function Results() {
     );
   }
 
-  const gradeTint = audit.grade === "D" ? "var(--fail)" : audit.grade === "C" ? "var(--warn)" : "var(--pass)";
+  const tintForGrade = (g: "A" | "B" | "C" | "D") => (g === "D" ? "var(--fail)" : g === "C" ? "var(--warn)" : "var(--pass)");
+  const gradeTint = tintForGrade(audit.dgaGrade ?? audit.grade);
 
   return (
     <div className="min-h-screen print:h-auto print:overflow-visible md:flex md:h-screen md:flex-col md:overflow-hidden">
@@ -133,31 +154,50 @@ function Results() {
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-3 md:mt-0">
-            <div className="h-1.5 w-28 overflow-hidden rounded-full bg-hairline md:w-32">
-              <div
-                className="h-full rounded-full bg-brand transition-all duration-700"
-                style={{ width: `${audit.score}%` }}
-              />
-            </div>
-            <div dir="ltr" className="font-mono text-sm font-bold tabular-nums text-ink">{audit.score}%</div>
-            <div className="hidden text-[11px] text-muted-foreground md:block">
-              مؤكد · <span dir="ltr" className="inline-block font-mono">{audit.scoreEstimated}%</span> شامل
-            </div>
-            <div
-              className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white"
-              style={{ background: gradeTint }}
-            >
-              {audit.grade}
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:mt-0">
-            <MiniTally label="مخالف" count={tally.fail} tint="var(--fail)" />
-            <MiniTally label="تحسين" count={tally.warn} tint="var(--warn)" />
-            <MiniTally label="مطابق" count={tally.pass} tint="var(--pass)" />
-            {tally.manual_review > 0 && (
-              <MiniTally label="تحقق يدوي" count={tally.manual_review} tint="var(--muted-foreground)" />
+          {/* صف واحد فقط، يعرض إحصاء المصدر النشط (activeSource) — نفس مصدر تبويبَي DGA/UX
+              أسفل. الضغط على أي رقم هنا يبدّل الفلتر داخل نفس المصدر المعروض حالياً؛ للتبديل
+              بين DGA وUX استخدم تبويبَي لوحة التفاصيل (يتزامن هذا الصف معهما تلقائياً). */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:mt-0 md:w-[600px] md:shrink-0">
+            <span className="w-12 shrink-0 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{SOURCE_LABELS[activeSource]}</span>
+            {activeSource === "DGA" ? (
+              <>
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-hairline md:w-24">
+                  <div className="h-full rounded-full bg-brand transition-all duration-700" style={{ width: `${audit.dgaScore ?? audit.score}%` }} />
+                </div>
+                <div dir="ltr" className="font-mono text-sm font-bold tabular-nums text-ink">{audit.dgaScore ?? audit.score}%</div>
+                <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white" style={{ background: gradeTint }}>
+                  {audit.dgaGrade ?? audit.grade}
+                </div>
+                <MiniTally label="مخالف" count={dgaTally.fail} tint="var(--fail)" onClick={() => setFilter("fail")} />
+                <MiniTally label="تحسين" count={dgaTally.warn} tint="var(--warn)" onClick={() => setFilter("warn")} />
+                <MiniTally label="مطابق" count={dgaTally.pass} tint="var(--pass)" onClick={() => setFilter("pass")} />
+                {dgaTally.manual_review > 0 && (
+                  <MiniTally label="تحقق يدوي" count={dgaTally.manual_review} tint="var(--muted-foreground)" onClick={() => setFilter("manual_review")} />
+                )}
+              </>
+            ) : audit.uxScore == null ? (
+              <span className="text-xs text-muted-foreground">—</span>
+            ) : (
+              <>
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-hairline md:w-24">
+                  <div className="h-full rounded-full bg-brand transition-all duration-700" style={{ width: `${audit.uxScore}%` }} />
+                </div>
+                <div dir="ltr" className="font-mono text-sm font-bold tabular-nums text-ink">{audit.uxScore}%</div>
+                {audit.uxGrade && (
+                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white" style={{ background: tintForGrade(audit.uxGrade) }}>
+                    {audit.uxGrade}
+                  </div>
+                )}
+                <MiniTally label="مخالف" count={uxTally.fail} tint="var(--fail)" onClick={() => setFilter("fail")} />
+                <MiniTally label="تحسين" count={uxTally.warn} tint="var(--warn)" onClick={() => setFilter("warn")} />
+                <MiniTally label="مطابق" count={uxTally.pass} tint="var(--pass)" onClick={() => setFilter("pass")} />
+                {uxTally.not_applicable > 0 && (
+                  <MiniTally label="غير منطبق" count={uxTally.not_applicable} tint="var(--muted-foreground)" onClick={() => setFilter("not_applicable")} />
+                )}
+                {uxTally.undetermined > 0 && (
+                  <MiniTally label="غير محسوم" count={uxTally.undetermined} tint="var(--muted-foreground)" onClick={() => setFilter("undetermined")} />
+                )}
+              </>
             )}
           </div>
 
@@ -179,9 +219,29 @@ function Results() {
         <section className="mt-4 grid gap-4 print:grid-cols-1 print:overflow-visible md:min-h-0 md:flex-1 md:grid-cols-12 md:overflow-hidden">
           <div className="md:col-span-7 md:min-h-0">
             <div className="glass rounded-lg p-6 print:overflow-visible md:flex md:h-full md:flex-col md:overflow-hidden">
+              <div className="mb-3 flex gap-2 print:hidden md:shrink-0">
+                {([
+                  { k: "DGA" as const, n: dgaRules.length },
+                  { k: "UX" as const, n: uxRules.length },
+                ]).map((s) => (
+                  <button
+                    key={s.k}
+                    onClick={() => { setActiveSource(s.k); setFilter("all"); }}
+                    className={cn(
+                      "rounded-md border px-3 py-1.5 text-xs font-bold transition",
+                      activeSource === s.k
+                        ? "border-brand bg-brand text-brand-foreground"
+                        : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
+                    )}
+                  >
+                    {SOURCE_LABELS[s.k]} <span className="font-mono tabular-nums">({s.n})</span>
+                  </button>
+                ))}
+              </div>
+
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3 md:shrink-0">
                 <h3 className="text-base font-semibold text-ink">
-                  تفاصيل التدقيق حسب معايير (DGA) — {audit.rules.length} معيار
+                  تفاصيل التدقيق حسب معايير ({SOURCE_LABELS[activeSource]}) — {sourceRules.length} معيار
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -191,11 +251,13 @@ function Results() {
                     {allExpanded ? "طيّ الكل" : "فتح الكل"}
                   </button>
                   {([
-                    { k: "all", label: "الكل", n: audit.rules.length },
+                    { k: "all", label: "الكل", n: sourceRules.length },
                     { k: "fail", label: "مخالف", n: tally.fail },
                     { k: "warn", label: "تحسين", n: tally.warn },
                     { k: "pass", label: "مطابق", n: tally.pass },
-                    { k: "manual_review", label: "تحقق يدوي", n: tally.manual_review },
+                    ...(tally.manual_review > 0 ? [{ k: "manual_review", label: "تحقق يدوي", n: tally.manual_review }] : []),
+                    ...(tally.not_applicable > 0 ? [{ k: "not_applicable", label: "غير منطبق", n: tally.not_applicable }] : []),
+                    ...(tally.undetermined > 0 ? [{ k: "undetermined", label: "غير محسوم", n: tally.undetermined }] : []),
                   ] as const).map((c) => (
                     <button
                       key={c.k}
@@ -290,13 +352,24 @@ function Results() {
   );
 }
 
-function MiniTally({ label, count, tint }: { label: string; count: number; tint: string }) {
+function MiniTally({
+  label, count, tint, onClick,
+}: {
+  label: string;
+  count: number;
+  tint: string;
+  onClick?: () => void;
+}) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="inline-flex items-center gap-1.5">
+    <Tag
+      onClick={onClick}
+      className={cn("inline-flex items-center gap-1.5", onClick && "rounded transition hover:opacity-70")}
+    >
       <span className="h-2 w-2 rounded-full" style={{ background: tint }} />
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono font-bold tabular-nums text-ink">{count}</span>
-    </div>
+    </Tag>
   );
 }
 
@@ -305,6 +378,8 @@ function StatusIcon({ status }: { status: Status }) {
   if (status === "pass") return <div className={cn(base, "bg-pass/10 text-pass")}><Check className="h-5 w-5" /></div>;
   if (status === "warn") return <div className={cn(base, "bg-warn/10 text-warn")}><AlertTriangle className="h-5 w-5" /></div>;
   if (status === "manual_review") return <div className={cn(base, "bg-slate-400/10 text-slate-500")}><HelpCircle className="h-5 w-5" /></div>;
+  if (status === "undetermined") return <div className={cn(base, "bg-slate-400/10 text-slate-500")}><HelpCircle className="h-5 w-5" /></div>;
+  if (status === "not_applicable") return <div className={cn(base, "bg-muted-foreground/10 text-muted-foreground")}><MinusCircle className="h-5 w-5" /></div>;
   return <div className={cn(base, "bg-fail/10 text-fail")}><X className="h-5 w-5" /></div>;
 }
 
@@ -316,7 +391,7 @@ function RuleRow({
 }: {
   rule: Rule;
   active: boolean;
-  onActivate: (rule: Rule) => void;
+  onActivate: (rule: Rule, nextOpen: boolean) => void;
   expandSignal: { open: boolean; token: number };
 }) {
   const [open, setOpen] = useState(false);
@@ -326,9 +401,12 @@ function RuleRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandSignal.token]);
 
+  const categoryLabels = rule.source === "UX" ? UX_CATEGORY_LABELS : CATEGORY_LABELS;
   const isPass = rule.status === "pass";
-  const displayTitle = isPass ? (rule.titlePass ?? `${CATEGORY_LABELS[rule.category]}: مستوفٍ`) : rule.title;
+  const isNeutral = rule.status === "not_applicable" || rule.status === "undetermined";
+  const displayTitle = isPass ? (rule.titlePass ?? `${categoryLabels[rule.category]}: مستوفٍ`) : rule.title;
   const displayDescription = isPass ? rule.descriptionPass : rule.description;
+  const evidenceLabel = isNeutral ? "السبب" : "دليل تقني";
   return (
     <div
       className={cn(
@@ -337,7 +415,7 @@ function RuleRow({
       )}
     >
       <button
-        onClick={() => { setOpen((o) => !o); onActivate(rule); }}
+        onClick={() => { const next = !open; setOpen(next); onActivate(rule, next); }}
         className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-muted md:px-5"
         aria-expanded={open}
       >
@@ -348,7 +426,7 @@ function RuleRow({
             {rule.region && <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="محدد على الصورة" />}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
-            {CATEGORY_LABELS[rule.category]}
+            {categoryLabels[rule.category]}
           </div>
         </div>
         <span className="hidden shrink-0 rounded-md bg-brand/8 px-2.5 py-1 font-mono text-[10px] font-bold text-brand md:inline">
@@ -363,7 +441,7 @@ function RuleRow({
           ) : isPass ? (
             <p className="text-sm leading-relaxed text-pass">لا توجد ملاحظات — هذا المعيار مستوفى بالكامل.</p>
           ) : null}
-          {!isPass && rule.recommendation && (
+          {!isPass && !isNeutral && rule.recommendation && (
             <div className="mt-3 rounded-md border-r-2 border-hairline bg-white p-3">
               <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية
@@ -373,7 +451,7 @@ function RuleRow({
           )}
           {rule.evidence && (
             <div className="mt-3">
-              <div className="mb-1 text-xs text-muted-foreground">دليل تقني</div>
+              <div className="mb-1 text-xs text-muted-foreground">{evidenceLabel}</div>
               <div dir="rtl" className="overflow-x-auto rounded-md bg-panel px-3 py-2 text-xs text-panel-foreground/90">
                 {rule.evidence}
               </div>

@@ -2,18 +2,11 @@
 // getAudit() calls the local FastAPI audit engine in audit-service/ (Playwright + Gemini,
 // real DGA rule detection). getRecentAudits()/getStats() stay as lightweight UI helpers.
 
-export type Category =
-  | "Typography"
-  | "Colors"
-  | "Spacing"
-  | "Radius"
-  | "Shadows"
-  | "Grid & Layout"
-  | "RTL & Localization"
-  | "Template Compliance"
-  | "Accessibility";
+export type Category = string;
 
-export type Status = "pass" | "warn" | "fail" | "manual_review";
+export type Status = "pass" | "warn" | "fail" | "manual_review" | "not_applicable" | "undetermined";
+
+export type RuleSource = "DGA" | "UX";
 
 export interface Region {
   x: number;      // نسبة مئوية من عرض الصورة (0-100)
@@ -35,6 +28,7 @@ export interface Rule {
   region?: Region; // مكان المخالفة على لقطة سطح المكتب (نِسَب مئوية)
   checkedLocations?: number | null; // إجمالي المواضع المفحوصة لهذه القاعدة (إن كانت مقيسة كوديًا)
   passedLocations?: number | null; // عدد المواضع الملتزمة من إجمالي المواضع المفحوصة
+  source?: RuleSource; // "DGA" (27 معيار هيئة الحكومة الرقمية) أو "UX" (27 قاعدة تجربة مستخدم عامة)
 }
 
 export interface Screenshot {
@@ -50,14 +44,19 @@ export interface Audit {
   url: string;
   scannedAt: string; // ISO
   durationSec: number;
-  score: number; // 0-100 — النسبة المؤكّدة (CSS/DOM + بصري بثقة عالية)
-  scoreEstimated: number; // 0-100 — شاملاً كل التقديرات البصرية
+  score: number; // 0-100 — النسبة المدموجة المؤكّدة (DGA + UX معاً، CSS/DOM + بصري بثقة عالية)
+  scoreEstimated: number; // 0-100 — النسبة المدموجة الشاملة (DGA + UX معاً، كل التقديرات البصرية)
+  dgaScore?: number; // 0-100 — نسبة DGA وحدها (مؤكّدة)
+  dgaScoreEstimated?: number; // 0-100 — نسبة DGA وحدها (شاملة)
+  dgaGrade?: "A" | "B" | "C" | "D";
+  uxScore?: number | null; // 0-100 — نسبة UX وحدها؛ null إن لم توجد قاعدة UX قابلة للتقييم في هذا الفحص
+  uxGrade?: "A" | "B" | "C" | "D" | null;
   grade: "A" | "B" | "C" | "D";
   rules: Rule[];
   screenshots: Screenshot[];
 }
 
-export const CATEGORY_LABELS: Record<Category, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   "Typography": "الطباعة",
   "Colors": "الألوان",
   "Spacing": "المسافات",
@@ -67,6 +66,19 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "RTL & Localization": "اتجاه RTL",
   "Template Compliance": "التزام القالب",
   "Accessibility": "إمكانية الوصول",
+};
+
+export const UX_CATEGORY_LABELS: Record<string, string> = {
+  "Accessibility (a11y)": "إمكانية الوصول",
+  "Interactive Elements": "العناصر التفاعلية",
+  "Content Density": "كثافة المحتوى",
+  "Forms & Input": "النماذج والإدخال",
+  "Navigation & Wayfinding": "التنقّل والاهتداء",
+  "Typography & Readability": "الطباعة وسهولة القراءة",
+  "Responsiveness": "التجاوب مع الشاشات",
+  "Visual Hierarchy & Layout": "التسلسل الهرمي البصري",
+  "Color & Contrast": "اللون والتباين",
+  "Consistency & Standards": "الاتساق والمعايير",
 };
 
 // Same-origin relative once a real base path is configured (waha ONBOARDING.md §2: "never

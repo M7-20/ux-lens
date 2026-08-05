@@ -80,7 +80,7 @@
   --popover-foreground: var(--ink);
 
   --pass: var(--brand);
-  --warn: #B45309;
+  --warn: #EA580C;
   --fail: #B91C1C;
   --destructive: var(--fail);
   --destructive-foreground: #FFFFFF;
