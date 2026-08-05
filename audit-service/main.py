@@ -8,6 +8,7 @@ load_dotenv()
 
 import engine
 import store
+import waha_integration
 from auth import current_user
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,3 +89,4 @@ def stats(user=Depends(current_user)):
 
 
 app.include_router(api)
+app.include_router(waha_integration.router)

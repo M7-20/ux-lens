@@ -26,10 +26,22 @@ CREATE TABLE IF NOT EXISTS users (
 );
 """
 
+PERMISSIONS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS permissions (
+    waha_sub TEXT PRIMARY KEY,
+    role TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+"""
+
 
 def _init_db() -> None:
     conn = sqlite3.connect(DB_PATH)
     conn.execute(SCHEMA)
+    conn.execute(PERMISSIONS_SCHEMA)
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
+    if "platform_admin" not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN platform_admin INTEGER NOT NULL DEFAULT 0")
     conn.commit()
     conn.close()
 

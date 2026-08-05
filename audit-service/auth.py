@@ -27,6 +27,7 @@ class User:
         self.name = row["name"]
         self.role = row["role"]
         self.is_active = bool(row["is_active"])
+        self.platform_admin = bool(row["platform_admin"])
 
 
 @functools.lru_cache(maxsize=1)
@@ -57,13 +58,13 @@ def provision_or_update(conn: sqlite3.Connection, claims: dict, role: str) -> Us
     fields = (
         claims.get("username", ""), claims.get("name"), claims.get("name_ar"), role,
         ad.get("title"), ad.get("department"), ad.get("company"),
-        ad.get("employee_id"), ad.get("email"),
+        ad.get("employee_id"), ad.get("email"), bool(claims.get("platform_admin", False)),
     )
     try:
         conn.execute(
             "INSERT INTO users (waha_sub, username, name, name_ar, role, ad_title, "
-            "ad_department, ad_company, ad_employee_id, ad_email, created_at, updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "ad_department, ad_company, ad_employee_id, ad_email, platform_admin, "
+            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (sub, *fields, now, now),
         )
         conn.commit()
@@ -71,8 +72,8 @@ def provision_or_update(conn: sqlite3.Connection, claims: dict, role: str) -> Us
         conn.rollback()   # سباق: طلب متزامن آخر أنشأ نفس الصف أول (خطأ §5.1 رقم 4)
     conn.execute(
         "UPDATE users SET username=?, name=?, name_ar=?, role=?, ad_title=?, "
-        "ad_department=?, ad_company=?, ad_employee_id=?, ad_email=?, updated_at=? "
-        "WHERE waha_sub=?",
+        "ad_department=?, ad_company=?, ad_employee_id=?, ad_email=?, platform_admin=?, "
+        "updated_at=? WHERE waha_sub=?",
         (*fields, now, sub),
     )
     conn.commit()
@@ -81,8 +82,10 @@ def provision_or_update(conn: sqlite3.Connection, claims: dict, role: str) -> Us
 
 
 async def legacy_auth(request: Request, conn: sqlite3.Connection) -> User:
+    # platform_admin=True محلياً: WAHA_SSO=off أصلاً بلا أي حماية فعلية، فما فيه
+    # داعي نقيّد مسارات /profile/{sub} و/permissions/{sub} أثناء التطوير المحلي.
     return User({"id": 0, "waha_sub": "local", "username": "local", "name": None,
-                 "role": "admin", "is_active": 1})
+                 "role": "admin", "is_active": 1, "platform_admin": True})
 
 
 async def current_user(request: Request, conn: sqlite3.Connection = Depends(db.get_db)) -> User:
