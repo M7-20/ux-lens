@@ -8,7 +8,8 @@ load_dotenv()
 
 import engine
 import store
-from fastapi import APIRouter, FastAPI, HTTPException
+from auth import current_user
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -40,7 +41,7 @@ def health():
 
 
 @api.post("/audit")
-async def audit(req: AuditRequest):
+async def audit(req: AuditRequest, user=Depends(current_user)):
     if not GEMINI_API_KEY:
         raise HTTPException(500, "GEMINI_API_KEY غير مضبوط — عدّل ملف audit-service/.env")
     t0 = time.time()
@@ -77,12 +78,12 @@ async def audit(req: AuditRequest):
 
 
 @api.get("/audits/recent")
-def recent_audits(limit: int = 10):
+def recent_audits(limit: int = 10, user=Depends(current_user)):
     return store.recent(limit)
 
 
 @api.get("/stats")
-def stats():
+def stats(user=Depends(current_user)):
     return store.stats()
 
 

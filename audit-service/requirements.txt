@@ -5,3 +5,4 @@ pillow
 google-genai
 pydantic
 python-dotenv
+python-jose[cryptography]

@@ -95,12 +95,24 @@ const AUDIT_SERVICE_URL = import.meta.env.VITE_AUDIT_SERVICE_URL
 // instead of running the whole pipeline a second time.
 const auditCache = new Map<string, Promise<Audit>>();
 
+// waha ONBOARDING.md §5: على 401 من الـAPI، نطلع من الـiframe قبل التحويل —
+// تنقّل داخل الإطار يُحظر بـ frame-ancestors ويطلع "refused to connect" (خطأ §5.1 رقم 5).
+function redirectToLogin() {
+  const top = window.top && window.top !== window.self ? window.top : window;
+  const next = location.pathname + location.search + location.hash;
+  top.location.assign(`/login?next=${encodeURIComponent(next)}`);
+}
+
 async function fetchAudit(url: string): Promise<Audit> {
   const res = await fetch(`${AUDIT_SERVICE_URL}/audit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
+  if (res.status === 401) {
+    redirectToLogin();
+    throw new Error("غير مصرح");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     throw new Error(body?.detail ?? `فشل الاتصال بخدمة التدقيق (${res.status})`);
@@ -136,6 +148,10 @@ export interface RecentAudit {
 
 export async function getRecentAudits(limit = 10): Promise<RecentAudit[]> {
   const res = await fetch(`${AUDIT_SERVICE_URL}/audits/recent?limit=${limit}`);
+  if (res.status === 401) {
+    redirectToLogin();
+    return [];
+  }
   if (!res.ok) return [];
   return res.json();
 }
@@ -148,6 +164,10 @@ export interface Stats {
 
 export async function getStats(): Promise<Stats> {
   const res = await fetch(`${AUDIT_SERVICE_URL}/stats`);
+  if (res.status === 401) {
+    redirectToLogin();
+    return { totalAudits: 0, avgDurationSec: 0, avgScore: 0 };
+  }
   if (!res.ok) return { totalAudits: 0, avgDurationSec: 0, avgScore: 0 };
   return res.json();
 }
