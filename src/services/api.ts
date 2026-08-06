@@ -1,6 +1,7 @@
 // Typed data service.
-// getAudit() calls the local FastAPI audit engine in audit-service/ (Playwright + Gemini,
-// real DGA rule detection). getRecentAudits()/getStats() stay as lightweight UI helpers.
+// getAudit() calls the local FastAPI audit engine in audit-service/ (Playwright +
+// a swappable vision backend, see audit-service/vision_provider.py — real DGA rule
+// detection). getRecentAudits()/getStats() stay as lightweight UI helpers.
 
 export type Category = string;
 
@@ -89,7 +90,7 @@ export const UX_CATEGORY_LABELS: Record<string, string> = {
 const AUDIT_SERVICE_URL = import.meta.env.VITE_AUDIT_SERVICE_URL
   ?? (import.meta.env.BASE_URL === "/" ? "http://localhost:8000/api" : `${import.meta.env.BASE_URL}api`);
 
-// The real audit takes 1-2 minutes (Playwright capture + Gemini visual scan).
+// The real audit takes 1-2 minutes (Playwright capture + vision-backend visual scan).
 // "/scanning" triggers the real call and "/results" re-requests the same url —
 // caching here means results.tsx picks up the already-finished audit instantly
 // instead of running the whole pipeline a second time.

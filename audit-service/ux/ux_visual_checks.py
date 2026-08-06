@@ -1,9 +1,10 @@
-# طبقة القواعد البصرية لـ UX (تحتاج Gemini) — معزولة تماماً عن محرك DGA (engine.py).
+# طبقة القواعد البصرية لـ UX (تحتاج مزوّد رؤية) — معزولة تماماً عن محرك DGA (engine.py).
 # لا شيء هنا يستورد من engine.py (لا VISUAL_RULES، لا CODE_CHECKED، لا build_prompt، لا Violation،
 # لا gen/to_box/dedup الخاصة بـ DGA) — كل الدوال المساعدة اللازمة مُعاد كتابتها محلياً هنا عمداً،
 # حتى لو تشابهت المنطق، حفاظاً على استقلالية كاملة: حذف هذا الملف + تعطيل ENABLE_UX_LAYER
-# لا يؤثران على DGA إطلاقاً. يستخدم نفس عميل Gemini (genai.Client) الممرَّر من engine.py —
-# إعادة استخدام الاتصال فقط، لا القواعد ولا البرومبت ولا منطق DGA.
+# لا يؤثران على DGA إطلاقاً. يستخدم نفس VisionProvider (vision_provider.py، وحدة محايدة
+# مشتركة — ليست engine.py) الممرَّر من engine.py — إعادة استخدام الاتصال فقط، لا القواعد
+# ولا البرومبت ولا منطق DGA.
 import hashlib
 import json
 import time
@@ -11,11 +12,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Literal
 
-from google import genai
-from google.genai import errors, types
 from PIL import Image
 from pydantic import BaseModel
 
+import vision_provider
+from vision_provider import VisionProvider
 from ux.ux_checks import RULE_BY_ID, UX_RULES, region_from_box
 
 BASE_DIR = Path(__file__).parent
@@ -23,7 +24,7 @@ DATA_DIR = BASE_DIR.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 CACHE_PATH = DATA_DIR / "ux_site_cache.json"
 
-MODEL = "gemini-3.5-flash"
+MODEL = vision_provider.cache_key_id()  # لتوقيع الكاش فقط — راجع engine.py لنفس الملاحظة
 TILE_HEIGHT = 1600
 OVERLAP = 200
 DEDUP_IOU = 0.5
@@ -69,23 +70,22 @@ def _save_cache(cache: dict) -> None:
     tmp.replace(CACHE_PATH)
 
 
-def gen(client: genai.Client, **kw):
-    for a in range(1, 5):
-        try:
-            return client.models.generate_content(**kw)
-        except (errors.ServerError, errors.ClientError) as e:
-            if not (isinstance(e, errors.ServerError) or getattr(e, "code", None) == 429) or a == 4:
-                raise
-            time.sleep(5 * a)
-
-
 def make_tiles(h, th, ov):
     ys = range(0, max(h - ov, 1), th - ov)
     return [(y, min(y + th, h)) for y in ys]
 
 
 def to_box(it, W, th, y0):
-    ymin, xmin, ymax, xmax = it["box_2d"]
+    """يرجّع (box, had_box_field) — راجع نفس التوثيق في engine.py's to_box:
+    had_box_field=False يعني المزوّد لم يرجّع box_2d أصلاً (مزوّد الوزارة غير
+    المؤكَّد)، فتُحفظ المخالفة بلا موضع بدل إسقاطها."""
+    raw = it.get("box_2d")
+    if not (isinstance(raw, (list, tuple)) and len(raw) == 4):
+        return None, False
+    try:
+        ymin, xmin, ymax, xmax = (float(v) for v in raw)
+    except (TypeError, ValueError):
+        return None, False
     if xmin > xmax:
         xmin, xmax = xmax, xmin
     if ymin > ymax:
@@ -93,12 +93,12 @@ def to_box(it, W, th, y0):
     bx = (int(xmin / 1000 * W), int(ymin / 1000 * th) + y0, int(xmax / 1000 * W), int(ymax / 1000 * th) + y0)
     bw, bh = bx[2] - bx[0], bx[3] - bx[1]
     if bw < 2 or bh < 2:
-        return None
+        return None, True
     if bh > 0.35 * th and bw < 0.20 * W and bh / max(bw, 1) > 4:
-        return None
+        return None, True
     if bw > 0.9 * W and bh < 12:
-        return None
-    return bx
+        return None, True
+    return bx, True
 
 
 def overlap_frac(box, rects):
@@ -130,18 +130,27 @@ def iou(a, b):
 
 def dedup(viols, thr):
     conf_rank = {"عالية": 3, "متوسطة": 2, "منخفضة": 1}
+    boxed = [v for v in viols if v["box"]]
+    boxless = [v for v in viols if not v["box"]]
     kept = []
-    for v in sorted(viols, key=lambda v: -(v["box"][2] - v["box"][0]) * (v["box"][3] - v["box"][1])):
+    for v in sorted(boxed, key=lambda v: -(v["box"][2] - v["box"][0]) * (v["box"][3] - v["box"][1])):
         dup = next((k for k in kept if k["rule_id"] == v["rule_id"] and iou(k["box"], v["box"]) >= thr), None)
         if dup:
             if conf_rank.get(v["conf"], 0) > conf_rank.get(dup["conf"], 0):
                 dup["conf"], dup["rec"] = v["conf"], v["rec"]
             continue
         kept.append(dict(v))
+    # بلا box: راجع نفس الملاحظة في engine.py's dedup — نُبقي الأعلى ثقة فقط لكل rule_id.
+    best_boxless: dict[str, dict] = {}
+    for v in boxless:
+        cur = best_boxless.get(v["rule_id"])
+        if cur is None or conf_rank.get(v["conf"], 0) > conf_rank.get(cur["conf"], 0):
+            best_boxless[v["rule_id"]] = v
+    kept.extend(best_boxless.values())
     return kept
 
 
-def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
+def _scan_sync(provider: VisionProvider, page: dict) -> list[dict]:
     """يُنفَّذ في thread منفصل (نفس أسلوب DGA) — لا يُستدعى مباشرة من كود async."""
     if not UX_VISUAL_RULES:
         return []
@@ -163,18 +172,11 @@ def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
             return i, key, cache[key], True, True
         tile_note = f"\n(هذه الشريحة {i + 1} من {len(tiles)} من صفحة طويلة)"
         time.sleep(0.8 * i)
-        try:
-            r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
-                    config=types.GenerateContentConfig(
-                        system_instruction="Return violations as JSON array in Arabic. No masks. Max 10.",
-                        temperature=0, max_output_tokens=8192,
-                        response_mime_type="application/json", response_schema=list[UXViolation],
-                        thinking_config=types.ThinkingConfig(thinking_budget=0),
-                        http_options=types.HttpOptions(timeout=30000)))
-            items = json.loads(r.text)
-            ok = True
-        except Exception:
-            items, ok = [], False
+        items, ok = provider.analyze_tile(
+            crop, PROMPT + tile_note,
+            system_instruction="Return violations as JSON array in Arabic. No masks. Max 10.",
+            response_model=UXViolation, max_output_tokens=8192, timeout_s=30.0,
+        )
         return i, key, items, False, ok
 
     with ThreadPoolExecutor(max_workers=min(4, len(tiles))) as ex:
@@ -198,10 +200,11 @@ def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
             rid = it.get("rule_id", "")
             if rid not in visual_ids:
                 continue
-            box = to_box(it, W, y1 - y0, y0)
-            if not box:
-                continue
-            if on_broken(box, page.get("broken", [])):
+            box, had_box = to_box(it, W, y1 - y0, y0)
+            if had_box and box is None:
+                continue  # box_2d موجود لكنه غير منطقي — يُسقط كما كان دائماً
+            # box=None وhad_box=False: لا box_2d من المزوّد أصلاً — تُحفظ بلا موضع.
+            if box and on_broken(box, page.get("broken", [])):
                 continue
             vv.append({"box": box, "rule_id": rid, "sev": it["severity"],
                        "conf": it["confidence"], "rec": it.get("recommendation"),
@@ -210,7 +213,7 @@ def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
     return dedup(vv, DEDUP_IOU), any_success
 
 
-def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
+def run_ux_visual_checks(provider: VisionProvider, page: dict) -> list[dict]:
     """يرجع قائمة نتائج بنفس شكل مخرجات run_ux_checks (id/category/status/title/description/
     recommendation/evidence/region/source='UX') — لكل الـ7 قواعد البصرية دائماً، بلا أي استدعاء لكود DGA.
     إذا فشل التحليل البصري بالكامل، القواعد السبع تُبلَّغ 'undetermined' لا 'pass' — لا تخمين."""
@@ -220,7 +223,7 @@ def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
     if not UX_VISUAL_RULES:
         return out
 
-    findings, any_success = _scan_sync(client, page)
+    findings, any_success = _scan_sync(provider, page)
 
     if not any_success:
         for r in UX_VISUAL_RULES:
@@ -228,7 +231,7 @@ def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
                 "id": r["id"], "category": r["category"], "status": "undetermined",
                 "title": r["title"], "description": r["description"],
                 "recommendation": r.get("recommendation"),
-                "evidence": "تعذّر تحليل الصفحة بصرياً عبر Gemini لتقييم هذه القاعدة (فشل الاتصال أو التحليل في كل الشرائح).",
+                "evidence": "تعذّر تحليل الصفحة بصرياً عبر مزوّد الرؤية لتقييم هذه القاعدة (فشل الاتصال أو التحليل في كل الشرائح).",
                 "region": None, "source": "UX",
             })
         return out
@@ -241,7 +244,9 @@ def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
         items = by_rule.get(r["id"], [])
         violated = bool(items)
         status = "pass" if not violated else ("fail" if r["severity"] == "Error" else "warn")
-        region = region_from_box_pixels(items[0]["box"], W, H) if violated else None
+        # ليس كل عنصر معه box بالضرورة — راجع نفس الملاحظة في engine.py's assemble_audit.
+        boxed_item = next((it for it in items if it["box"]), None) if violated else None
+        region = region_from_box_pixels(boxed_item["box"], W, H) if boxed_item else None
         evidence = items[0].get("evidence") if violated else None
         if violated and len(items) > 1:
             evidence = f"{evidence} (+{len(items) - 1} مواضع أخرى)" if evidence else f"{len(items)} مواضع"

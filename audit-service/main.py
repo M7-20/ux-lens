@@ -8,14 +8,13 @@ load_dotenv()
 
 import engine
 import store
+import vision_provider
 import waha_integration
 from auth import current_user
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 app = FastAPI(title="UX Lens Audit Service")
 
@@ -38,16 +37,27 @@ class AuditRequest(BaseModel):
 
 @api.get("/health")
 def health():
-    return {"ok": True, "gemini_key_set": bool(GEMINI_API_KEY)}
+    try:
+        vision_provider.get_vision_provider()
+        vision_configured = True
+    except RuntimeError:
+        vision_configured = False
+    return {
+        "ok": True,
+        "vision_provider": os.environ.get("VISION_PROVIDER", "gemini").strip().lower(),
+        "vision_configured": vision_configured,
+    }
 
 
 @api.post("/audit")
 async def audit(req: AuditRequest, user=Depends(current_user)):
-    if not GEMINI_API_KEY:
-        raise HTTPException(500, "GEMINI_API_KEY غير مضبوط — عدّل ملف audit-service/.env")
+    try:
+        provider = vision_provider.get_vision_provider()
+    except RuntimeError as e:
+        raise HTTPException(500, f"مزوّد الرؤية غير مضبوط: {e}")
     t0 = time.time()
     try:
-        result = await asyncio.wait_for(engine.run_audit(req.url, GEMINI_API_KEY), timeout=300)
+        result = await asyncio.wait_for(engine.run_audit(req.url, provider), timeout=300)
     except asyncio.TimeoutError:
         raise HTTPException(504, "تجاوز الفحص المهلة القصوى (5 دقائق) وأُلغي.")
     except Exception as e:

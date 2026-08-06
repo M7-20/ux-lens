@@ -7,10 +7,11 @@ import {
   Scripts,
   Link,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ThemedBackground } from "@/components/themed-background";
+import { initWahaPrefsSync } from "@/lib/waha-prefs";
 
 function NotFoundComponent() {
   return (
@@ -61,9 +62,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: `${import.meta.env.BASE_URL}logo.svg`, type: "image/svg+xml" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" },
+      // Almarai مُستضاف ذاتياً (@font-face في styles.css) بدل Google Fonts CDN —
+      // التطبيق يُنشر خلف بوابة معزولة (air-gapped)؛ طلب CDN خارجي كان سيفشل بصمت
+      // وقت التشغيل. IBM Plex Mono لم يعد مُحمَّلاً: لا نسخة مُستضافة ذاتياً متوفرة
+      // له حالياً، فيرتد المتصفح لبقية سلسلة --font-mono (ui-monospace/SFMono-Regular/
+      // monospace) — نفس الفكرة قابلة للتطبيق عليه لاحقاً إن تكرّر الاحتياج.
     ],
   }),
   shellComponent: RootShell,
@@ -72,6 +75,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// lang="ar" dir="rtl" يبقى الافتراضي المُصيَّر من الخادم (SSR) — يطابق سلوك
+// التطبيق قبل هذا التغيير تماماً لأي طلب بلا كوكي waha_prefs بعد. src/lib/waha-prefs.ts
+// يصحّحه على العميل عند الإقلاع إن كانت الكوكي تقول غير ذلك (راجع RootComponent
+// أدناه) — قد يظهر ومضة بسيطة قبل تشغيل جافاسكربت في حالة locale=en/theme=dark
+// من واحة، وهذا محدود حالياً بغياب قراءة الكوكي على الخادم (SSR) لهذا المكوّن.
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
@@ -83,6 +91,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // waha ONBOARDING.md §9 — يقرأ كوكي waha_prefs عند الإقلاع + يستمع لبثّ
+  // postMessage اللاحق من rail واحة، بلا إعادة تحميل. راجع src/lib/waha-prefs.ts
+  // للعقد الكامل (التحقق من event.origin + data.source معاً، الخ).
+  useEffect(() => initWahaPrefsSync(), []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemedBackground />

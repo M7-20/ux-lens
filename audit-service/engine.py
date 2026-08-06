@@ -3,7 +3,8 @@
 #  من CSS/DOM (يقين): الخط · الزوايا · المسافات · الألوان التفاعلية ·
 #    تباين النص (WCAG) · تتبّع العناوين · عرض الفقرات · أحجام الخط ·
 #    التدرجات · تباين حقول الإدخال · RTL · شريط الحالة
-#  من الصورة (Gemini): بقية القواعد، بمستوى ثقة ودليل
+#  من الصورة (مزوّد رؤية قابل للتبديل — Gemini أو بوابة الوزارة، راجع
+#    vision_provider.py): بقية القواعد، بمستوى ثقة ودليل
 # ============================================================
 import asyncio
 import hashlib
@@ -18,11 +19,12 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlparse
 
-from google import genai
-from google.genai import errors, types
 from PIL import Image
 from playwright.async_api import async_playwright
 from pydantic import BaseModel
+
+import vision_provider
+from vision_provider import VisionProvider
 
 logger = logging.getLogger("uxlens")
 logger.setLevel(logging.INFO)
@@ -45,7 +47,7 @@ OVERLAP = 200
 DEDUP_IOU = 0.5      # عتبة اعتبار إطارين "نفس المخالفة"
 IMG_OVERLAP = 0.7    # نسبة وقوع المخالفة داخل صورة محتوى لاستبعادها
 MAX_TILES = 4        # سقف الشرائح — يضمن بقاء التحليل ضمن الوقت
-MODEL = "gemini-3.5-flash"
+MODEL = vision_provider.cache_key_id()  # لتوقيع الكاش فقط — الموديل الفعلي يقرره VisionProvider (VISION_PROVIDER)
 
 with open(BASE_DIR / "dga" / "dga-rules.json", encoding="utf-8") as f:
     DGA = json.load(f)
@@ -655,7 +657,7 @@ def run_checks(page: dict) -> dict:
             "fzv": fzv, "grv": grv, "g_unv": g_unv, "uiv": uiv, "u_unv": u_unv, "rtv": rtv}
 
 
-# ============ 3) الفحص البصري (Gemini) ============
+# ============ 3) الفحص البصري (مزوّد رؤية قابل للتبديل — vision_provider.py) ============
 class Violation(BaseModel):
     box_2d: list[int]
     rule_id: str
@@ -683,16 +685,9 @@ def build_prompt() -> str:
 
 PROMPT = build_prompt()
 RULES_SIG = hashlib.md5((MODEL + PROMPT).encode()).hexdigest()[:10]
-
-
-def gen(client: genai.Client, **kw):
-    for a in range(1, 5):
-        try:
-            return client.models.generate_content(**kw)
-        except (errors.ServerError, errors.ClientError) as e:
-            if not (isinstance(e, errors.ServerError) or getattr(e, "code", None) == 429) or a == 4:
-                raise
-            time.sleep(5 * a)
+# ملاحظة: استدعاء النموذج نفسه (بإعادة المحاولة عند الأخطاء العابرة) انتقل إلى
+# VisionProvider.analyze_tile() (vision_provider.py) — معزول هناك مع كل تفاصيل
+# Gemini الأخرى (thinking_config، response_schema، الخ).
 
 
 def make_tiles(h, th, ov):
@@ -701,7 +696,19 @@ def make_tiles(h, th, ov):
 
 
 def to_box(it, W, th, y0):
-    ymin, xmin, ymax, xmax = it["box_2d"]
+    """يرجّع (box, had_box_field).
+
+    had_box_field=False يعني المزوّد ما رجّع box_2d أصلاً (متوقّع مع مزوّد
+    الوزارة — راجع vision_provider.py) — المخالفة تُحفظ بلا box بدل إسقاطها.
+    had_box_field=True مع box=None يعني box_2d كان موجوداً لكنه غير منطقي
+    (حارس هلوسة Gemini الأصلي) — هذه الحالة تُسقَط كما كانت دائماً."""
+    raw = it.get("box_2d")
+    if not (isinstance(raw, (list, tuple)) and len(raw) == 4):
+        return None, False
+    try:
+        ymin, xmin, ymax, xmax = (float(v) for v in raw)
+    except (TypeError, ValueError):
+        return None, False
     if xmin > xmax:
         xmin, xmax = xmax, xmin
     if ymin > ymax:
@@ -709,12 +716,12 @@ def to_box(it, W, th, y0):
     bx = (int(xmin / 1000 * W), int(ymin / 1000 * th) + y0, int(xmax / 1000 * W), int(ymax / 1000 * th) + y0)
     bw, bh = bx[2] - bx[0], bx[3] - bx[1]
     if bw < 2 or bh < 2:
-        return None
+        return None, True
     if bh > 0.35 * th and bw < 0.20 * W and bh / max(bw, 1) > 4:
-        return None
+        return None, True
     if bw > 0.9 * W and bh < 12:
-        return None
-    return bx
+        return None, True
+    return bx, True
 
 
 def overlap_frac(box, rects, mode="box"):
@@ -748,8 +755,10 @@ def iou(a, b):
 
 def dedup(viols, thr):
     conf_rank = {"عالية": 3, "متوسطة": 2, "منخفضة": 1}
+    boxed = [v for v in viols if v["box"]]
+    boxless = [v for v in viols if not v["box"]]
     kept = []
-    for v in sorted(viols, key=lambda v: -(v["box"][2] - v["box"][0]) * (v["box"][3] - v["box"][1])):
+    for v in sorted(boxed, key=lambda v: -(v["box"][2] - v["box"][0]) * (v["box"][3] - v["box"][1])):
         dup = next((k for k in kept if k["rule_id"] == v["rule_id"]
                     and iou(k["box"], v["box"]) >= thr), None)
         if dup:
@@ -757,10 +766,19 @@ def dedup(viols, thr):
                 dup["conf"], dup["rec"] = v["conf"], v["rec"]
             continue
         kept.append(dict(v))
+    # بلا box: لا معلومة مكانية لدمجها عبر IoU — نُبقي واحدة فقط لكل rule_id
+    # (الأعلى ثقة) بدل تكرار نفس المخالفة لكل شريحة رصدتها فيها (مزوّد الوزارة
+    # غير المؤكَّد فقط يصل لهذا المسار — راجع vision_provider.py).
+    best_boxless: dict[str, dict] = {}
+    for v in boxless:
+        cur = best_boxless.get(v["rule_id"])
+        if cur is None or conf_rank.get(v["conf"], 0) > conf_rank.get(cur["conf"], 0):
+            best_boxless[v["rule_id"]] = v
+    kept.extend(best_boxless.values())
     return kept
 
 
-def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict], list[dict]]:
+def _run_visual_scan_sync(provider: VisionProvider, page: dict) -> tuple[list[dict], list[dict]]:
     W, H = page["shot_width"], page["shot_height"]
     th = TILE_HEIGHT
     tiles = make_tiles(H, th, OVERLAP)
@@ -782,17 +800,11 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
                      + ("" if i == 0 else " — أعلى الصفحة ليس فيها؛ لا تُقيّم قواعد الهيدر أو شريط الحالة")
                      + ")")
         time.sleep(0.8 * i)
-        try:
-            r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
-                    config=types.GenerateContentConfig(
-                        system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
-                        temperature=0, max_output_tokens=8192,
-                        response_mime_type="application/json", response_schema=list[Violation],
-                        thinking_config=types.ThinkingConfig(thinking_budget=0),
-                        http_options=types.HttpOptions(timeout=30000)))
-            items = json.loads(r.text)
-        except Exception:
-            items = []
+        items, _ok = provider.analyze_tile(
+            crop, PROMPT + tile_note,
+            system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
+            response_model=Violation, max_output_tokens=8192, timeout_s=30.0,
+        )
         return i, key, items, False
 
     with ThreadPoolExecutor(max_workers=min(4, len(tiles))) as ex:
@@ -822,17 +834,19 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
             if i > 0 and rid in GLOBAL_TOP:
                 excluded_global += 1
                 continue
-            box = to_box(it, W, y1 - y0, y0)
-            if not box:
-                excluded_box += 1
+            box, had_box = to_box(it, W, y1 - y0, y0)
+            if had_box and box is None:
+                excluded_box += 1  # box_2d كان موجوداً لكنه غير منطقي — يُسقط كما كان دائماً
                 continue
-            if on_broken(box, page["broken"]):
+            # box=None وhad_box=False: المزوّد لم يرجّع box_2d أصلاً (متوقّع مع
+            # مزوّد الوزارة غير المؤكَّد) — تُحفظ المخالفة بلا موضع بدل إسقاطها.
+            if box and on_broken(box, page["broken"]):
                 excluded_broken += 1
                 continue
             v = {"box": box, "rule_id": rid, "sev": it["severity"],
                  "conf": it["confidence"], "rec": it.get("recommendation"),
                  "evidence": it.get("evidence")}
-            if rid.startswith("DGA-CLR") and overlap_frac(box, page["imgs"], "box") >= IMG_OVERLAP:
+            if box and rid.startswith("DGA-CLR") and overlap_frac(box, page["imgs"], "box") >= IMG_OVERLAP:
                 on_imgs.append(v)
                 continue
             vv.append(v)
@@ -1031,7 +1045,11 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict], elapsed: 
                 status = "pass"
             else:
                 status = _status_for(r, True)
-                region = region_from_box(items[0]["box"], W, H)
+                # ليس كل عنصر معه box بالضرورة (مزوّد الوزارة قد لا يرجّع box_2d
+                # إطلاقاً — راجع vision_provider.py) — نستخدم أول عنصر معه موضع
+                # فعلي؛ إن لم يوجد، تبقى region فارغة والمخالفة تُعرض بلا تظليل.
+                boxed_item = next((it for it in items if it["box"]), None)
+                region = region_from_box(boxed_item["box"], W, H) if boxed_item else None
                 evidence = items[0].get("evidence")
                 if len(items) > 1:
                     evidence = f"{evidence} (+{len(items) - 1} مواضع أخرى)" if evidence else f"{len(items)} مواضع"
@@ -1078,17 +1096,18 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict], elapsed: 
 
 
 # ============ 5) نقطة الدخول ============
-async def run_audit(url: str, gemini_api_key: str) -> dict:
+async def run_audit(url: str, provider: VisionProvider) -> dict:
     t0 = time.time()
     page = await capture_page(url)
     checks = run_checks(page)
 
-    client = genai.Client(api_key=gemini_api_key)
-    ux_client = genai.Client(api_key=gemini_api_key)
-    dga_visual_task = asyncio.to_thread(_run_visual_scan_sync, client, page)
+    # نفس provider يُمرَّر لفحصي DGA وUX البصريين — كلاهما كانا أصلاً يُشغَّلان
+    # في threads منفصلة (ThreadPoolExecutor) على نفس عميل Gemini، فمشاركة
+    # provider واحد بينهما لا تضيف أي تزامن جديد لم يكن موجوداً.
+    dga_visual_task = asyncio.to_thread(_run_visual_scan_sync, provider, page)
     if ENABLE_UX_LAYER:
         from ux.ux_visual_checks import run_ux_visual_checks
-        ux_visual_task = asyncio.to_thread(run_ux_visual_checks, ux_client, page)
+        ux_visual_task = asyncio.to_thread(run_ux_visual_checks, provider, page)
         (vv, _on_imgs), ux_visual_rules = await asyncio.gather(dga_visual_task, ux_visual_task)
     else:
         vv, _on_imgs = await dga_visual_task

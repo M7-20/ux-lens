@@ -7,18 +7,45 @@ services:
     volumes:
       - shots:/app/shots
       - data:/app/data
+      # مفتاح واحة العام (RS256) — للقراءة فقط، من مستودع waha المجاور. غير
+      # مؤذٍ تركيبه حتى مع WAHA_SSO=off (لا يُقرأ إلا عند تفعيلها — راجع
+      # auth.py). المسار يطابق WAHA_PUBLIC_KEY_PATH في .env.example. نفس نمط
+      # ../sahem/docker-compose.yml.
+      - ../waha/api/keys/waha.pub.pem:/app/waha_public_key.pem:ro
     shm_size: "1gb"
+    # waha ONBOARDING.md §3.2. تحقّق فعلي (لا افتراض): Playwright/Chromium
+    # يشتغل كامل — إطلاق المتصفح + التقاط صفحة فعلية — تحت read_only + هذا
+    # cap_drop بالضبط، بشرط أن يكون shots/data named volumes (Docker يُنشئها
+    # مملوكة لـroot، فروت الحاوية يقدر يكتب فيها حتى بلا DAC_OVERRIDE؛ bind
+    # mount من المضيف مملوك لمستخدم غير root كان يفشل بـ"unable to open
+    # database file" في هذا الاختبار بالضبط — لهذا shots/data تبقى named
+    # volumes لا bind mounts). لا cap_add مطلوب إطلاقاً (لا Chromium ولا
+    # uvicorn يحتاجان أي capability هنا؛ خلافاً لمرجع nginx في §3.2).
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    tmpfs:
+      - /tmp
 
   frontend:
     build:
       context: .
       args:
-        VITE_BASE_PATH: /uxlens/
+        # waha ONBOARDING.md §2 — full platform prefix + this app's segment,
+        # not the segment alone (see .env.example for why).
+        VITE_BASE_PATH: /waha/uxlens
         VITE_AUDIT_SERVICE_URL: http://localhost:8000/api
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       - backend
+    # waha ONBOARDING.md §3.2 — خادم Nitro/Node يخدم بناءً ثابتاً مسبقاً، لا
+    # يكتب على القرص وقت التشغيل؛ تحقّق فعلي: يشتغل كامل تحت نفس التشديد أدناه.
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    tmpfs:
+      - /tmp
 
 volumes:
   shots:

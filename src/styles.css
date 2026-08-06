@@ -2,6 +2,59 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* خط Almarai مُستضاف ذاتياً (منسوخ من ../waha/src/assets/fonts) بدل تحميله من
+   Google Fonts CDN — التطبيق يُنشر خلف بوابة معزولة (air-gapped)، وطلب CDN
+   خارجي يفشل هناك بصمت (لا اتصال إنترنت وقت التشغيل). نفس الأوزان/الملفات/
+   unicode-range المستخدمة في waha's src/index.css حرفياً. */
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-400-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC, U+200C-200E;
+}
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-700-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC, U+200C-200E;
+}
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-700-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-800-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC, U+200C-200E;
+}
+@font-face {
+  font-family: "Almarai";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("./assets/fonts/almarai-800-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -87,9 +140,52 @@
   --ring: var(--brand);
 }
 
+/* waha ONBOARDING.md §9 — الوضع الداكن يتبع rail واحة (data-theme/.dark على
+   <html>، راجع src/lib/waha-prefs.ts)، لا مفتاح داخلي خاص بالتطبيق. تدرّج
+   داكن مقابل لكل متغيّر معرَّف أعلاه فقط — تمريرة أولى معقولة (ليست جولة
+   تصميم كاملة) حتى يكون لتبديل الـtheme أثر مرئي فعلي بدل مجرد تغيير سمة HTML
+   بلا تأثير. */
+.dark {
+  --background: #0D1210;
+  --surface: #151B18;
+  --ink: #F3F4F6;
+  --foreground: #F3F4F6;
+  --muted: #1F2937;
+  --muted-foreground: #9CA3AF;
+  --hairline: #283330;
+  --border: #283330;
+  --input: #283330;
+
+  --brand: #22A06B;
+  --brand-deep: #15734A;
+  --brand-foreground: #06120C;
+  --gold: #9CA3AF;
+  --panel: #1F2937;
+  --panel-foreground: #F9FAFB;
+
+  --secondary: #1F2937;
+  --secondary-foreground: var(--ink);
+  --accent: #1F2937;
+  --accent-foreground: var(--ink);
+
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+
+  --pass: var(--brand);
+  --warn: #FB923C;
+  --fail: #F87171;
+  --destructive: var(--fail);
+  --destructive-foreground: #1F0A0A;
+  --ring: var(--brand);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
-  html { direction: rtl; }
+  /* لا "direction: rtl" ثابتة هنا عمداً — سمة dir على <html> (افتراضياً rtl،
+     راجع __root.tsx وsrc/lib/waha-prefs.ts) هي ما يقرر الاتجاه فعلياً؛ قاعدة
+     مؤلَّفة هنا كانت ستتفوّق على سمة dir وتُبطل تبديل اللغة إلى ltr بالكامل. */
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
