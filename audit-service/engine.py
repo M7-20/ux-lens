@@ -139,7 +139,7 @@ async def capture_page(url: str) -> dict:
         b = await p.chromium.launch(args=["--no-sandbox"])
         pg = await b.new_page(viewport={"width": 1440, "height": 900})
         try:
-            await pg.goto(url, wait_until="load", timeout=75000)
+            await pg.goto(url, wait_until="domcontentloaded", timeout=75000)
 
             await pg.add_style_tag(content="""*,*::before,*::after{
                 animation:none!important; transition:none!important;
