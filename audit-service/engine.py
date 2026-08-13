@@ -6,9 +6,12 @@
 #  من الصورة (Gemini): بقية القواعد، بمستوى ثقة ودليل
 # ============================================================
 import asyncio
+import base64
 import hashlib
+import io
 import json
 import logging
+import os
 import re
 import time
 from collections import Counter, defaultdict
@@ -20,6 +23,7 @@ from urllib.parse import urlparse
 
 from google import genai
 from google.genai import errors, types
+from openai import APIConnectionError, APIStatusError, OpenAI
 from PIL import Image
 from playwright.async_api import async_playwright
 from pydantic import BaseModel
@@ -46,6 +50,11 @@ DEDUP_IOU = 0.5      # عتبة اعتبار إطارين "نفس المخالف
 IMG_OVERLAP = 0.7    # نسبة وقوع المخالفة داخل صورة محتوى لاستبعادها
 MAX_TILES = 4        # سقف الشرائح — يضمن بقاء التحليل ضمن الوقت
 MODEL = "gemini-3.5-flash"
+
+MINISTRY_VLM_API_KEY = os.environ.get("MINISTRY_VLM_API_KEY", "")
+MINISTRY_VLM_BASE_URL = os.environ.get("MINISTRY_VLM_BASE_URL", "")
+MINISTRY_VLM_MODEL = "qwen2.5-vl-72b"
+MINISTRY_ENABLED = bool(MINISTRY_VLM_API_KEY and MINISTRY_VLM_BASE_URL)
 
 with open(BASE_DIR / "dga" / "dga-rules.json", encoding="utf-8") as f:
     DGA = json.load(f)
@@ -695,6 +704,49 @@ def gen(client: genai.Client, **kw):
             time.sleep(5 * a)
 
 
+def gen_ministry(client: OpenAI, **kw):
+    for a in range(1, 5):
+        try:
+            return client.chat.completions.create(**kw)
+        except (APIStatusError, APIConnectionError) as e:
+            status = getattr(e, "status_code", None)
+            if not (status is None or status >= 500 or status == 429) or a == 4:
+                raise
+            time.sleep(5 * a)
+
+
+MINISTRY_VIOLATIONS_SCHEMA = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "violations_response",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "violations": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "box_2d": {"type": "array", "items": {"type": "integer"}},
+                            "rule_id": {"type": "string"},
+                            "severity": {"type": "string", "enum": ["Error", "Warning", "Info"]},
+                            "confidence": {"type": "string", "enum": ["عالية", "متوسطة", "منخفضة"]},
+                            "evidence": {"type": "string"},
+                            "recommendation": {"type": "string"},
+                        },
+                        "required": ["box_2d", "rule_id", "severity", "confidence", "evidence", "recommendation"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "required": ["violations"],
+            "additionalProperties": False,
+        },
+    },
+}
+
+
 def make_tiles(h, th, ov):
     ys = range(0, max(h - ov, 1), th - ov)
     return [(y, min(y + th, h)) for y in ys]
@@ -783,14 +835,30 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
                      + ")")
         time.sleep(0.8 * i)
         try:
-            r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
-                    config=types.GenerateContentConfig(
-                        system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
-                        temperature=0, max_output_tokens=8192,
-                        response_mime_type="application/json", response_schema=list[Violation],
-                        thinking_config=types.ThinkingConfig(thinking_budget=0),
-                        http_options=types.HttpOptions(timeout=30000)))
-            items = json.loads(r.text)
+            if MINISTRY_ENABLED:
+                buf = io.BytesIO()
+                crop.save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode()
+                r = gen_ministry(client, model=MINISTRY_VLM_MODEL, temperature=0, max_tokens=8192, timeout=30,
+                        reasoning_effort="none",
+                        response_format=MINISTRY_VIOLATIONS_SCHEMA,
+                        messages=[
+                            {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]} in Arabic. No masks. Max 15."},
+                            {"role": "user", "content": [
+                                {"type": "text", "text": PROMPT + tile_note},
+                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                            ]},
+                        ])
+                items = json.loads(r.choices[0].message.content)["violations"]
+            else:
+                r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
+                        config=types.GenerateContentConfig(
+                            system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
+                            temperature=0, max_output_tokens=8192,
+                            response_mime_type="application/json", response_schema=list[Violation],
+                            thinking_config=types.ThinkingConfig(thinking_budget=0),
+                            http_options=types.HttpOptions(timeout=30000)))
+                items = json.loads(r.text)
         except Exception:
             items = []
         return i, key, items, False
@@ -1083,8 +1151,12 @@ async def run_audit(url: str, gemini_api_key: str) -> dict:
     page = await capture_page(url)
     checks = run_checks(page)
 
-    client = genai.Client(api_key=gemini_api_key)
-    ux_client = genai.Client(api_key=gemini_api_key)
+    if MINISTRY_ENABLED:
+        client = OpenAI(api_key=MINISTRY_VLM_API_KEY, base_url=MINISTRY_VLM_BASE_URL)
+        ux_client = client
+    else:
+        client = genai.Client(api_key=gemini_api_key)
+        ux_client = genai.Client(api_key=gemini_api_key)
     dga_visual_task = asyncio.to_thread(_run_visual_scan_sync, client, page)
     if ENABLE_UX_LAYER:
         from ux.ux_visual_checks import run_ux_visual_checks

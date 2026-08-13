@@ -16,6 +16,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+MINISTRY_LLM_API_KEY = os.environ.get("MINISTRY_LLM_API_KEY", "")  # جاهز لقواعد نصية مستقبلية — بدون استخدام حالي
+MINISTRY_LLM_BASE_URL = os.environ.get("MINISTRY_LLM_BASE_URL", "")  # نفس الشيء
 
 app = FastAPI(title="UX Lens Audit Service")
 
