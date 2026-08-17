@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Clock, Globe, ListChecks } from "lucide-react";
+import { ArrowLeft, Clock, Home, ListChecks, Mail } from "lucide-react";
 import { AppHeader } from "@/components/app-header";
 import { getRecentAudits, getStats, type Stats } from "@/services/api";
 
@@ -16,11 +16,8 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const SAMPLES = ["naama.sa"];
-
 function Index() {
   const navigate = useNavigate();
-  const [url, setUrl] = useState("");
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof getRecentAudits>>>([]);
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -49,45 +46,25 @@ function Index() {
             تدقيق آلي شامل وفق معايير هيئة الحكومة الرقمية (DGA) ومعايير تجربة المستخدم (UX).
           </p>
 
-          <form
-            onSubmit={(e) => { e.preventDefault(); submit(url); }}
-            className="mt-6 rounded-md bg-white p-2 ring-1 ring-hairline"
-          >
-            <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <div className="flex flex-1 items-center gap-3 px-4 py-2">
-                <Globe className="h-5 w-5 shrink-0 text-muted-foreground/70" />
-                <input
-                  id="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="أدخل رابط الموقع الحكومي للفحص..."
-                  dir="ltr"
-                  className="ltr h-11 w-full bg-transparent font-mono text-[15px] text-ink placeholder:text-right placeholder:font-sans placeholder:text-muted-foreground/70 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-              <button
-                type="submit"
-                className="flex h-12 items-center justify-center gap-2 rounded-md bg-brand px-8 font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
-              >
-                ابدأ الفحص
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">أمثلة سريعة:</span>
-            {SAMPLES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => { setUrl(`https://${s}`); submit(`https://${s}`); }}
-                className="ltr rounded-md border border-hairline bg-white px-3 py-1 font-mono text-xs text-ink transition hover:border-brand hover:text-brand"
-              >
-                {s}
-              </button>
-            ))}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => submit("https://naama.sa/")}
+              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
+            >
+              <Home className="h-5 w-5" />
+              الصفحة الرئيسية
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => submit("https://naama.sa/pages/contactus")}
+              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
+            >
+              <Mail className="h-5 w-5" />
+              اتصل بنا
+              <ArrowLeft className="h-4 w-4" />
+            </button>
           </div>
         </section>
 
