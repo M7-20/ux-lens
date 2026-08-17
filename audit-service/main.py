@@ -8,13 +8,17 @@ load_dotenv()
 
 import engine
 import store
-import vision_provider
 import waha_integration
 from auth import current_user
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+MINISTRY_VLM_API_KEY = os.environ.get("MINISTRY_VLM_API_KEY", "")
+MINISTRY_LLM_API_KEY = os.environ.get("MINISTRY_LLM_API_KEY", "")  # جاهز لقواعد نصية مستقبلية — بدون استخدام حالي
+MINISTRY_LLM_BASE_URL = os.environ.get("MINISTRY_LLM_BASE_URL", "")  # نفس الشيء
+MINISTRY_LLM_MODEL = "llm-enterprise"  # موديل النصوص الوزاري — يُستخدم مع MINISTRY_LLM_API_KEY/MINISTRY_LLM_BASE_URL أعلاه، بدون نقطة استدعاء فعلية حالياً
 
 app = FastAPI(title="UX Lens Audit Service")
 
@@ -37,29 +41,18 @@ class AuditRequest(BaseModel):
 
 @api.get("/health")
 def health():
-    try:
-        vision_provider.get_vision_provider()
-        vision_configured = True
-    except RuntimeError:
-        vision_configured = False
-    return {
-        "ok": True,
-        "vision_provider": os.environ.get("VISION_PROVIDER", "gemini").strip().lower(),
-        "vision_configured": vision_configured,
-    }
+    return {"ok": True, "ministry_vlm_key_set": bool(MINISTRY_VLM_API_KEY)}
 
 
 @api.post("/audit")
 async def audit(req: AuditRequest, user=Depends(current_user)):
-    try:
-        provider = vision_provider.get_vision_provider()
-    except RuntimeError as e:
-        raise HTTPException(500, f"مزوّد الرؤية غير مضبوط: {e}")
+    if not MINISTRY_VLM_API_KEY:
+        raise HTTPException(500, "MINISTRY_VLM_API_KEY غير مضبوط — عدّل ملف audit-service/.env")
     t0 = time.time()
     try:
-        result = await asyncio.wait_for(engine.run_audit(req.url, provider), timeout=300)
+        result = await asyncio.wait_for(engine.run_audit(req.url), timeout=480)
     except asyncio.TimeoutError:
-        raise HTTPException(504, "تجاوز الفحص المهلة القصوى (5 دقائق) وأُلغي.")
+        raise HTTPException(504, "تجاوز الفحص المهلة القصوى (8 دقائق) وأُلغي.")
     except Exception as e:
         raise HTTPException(500, f"فشل التدقيق: {e}")
     result["durationSec"] = round(time.time() - t0)

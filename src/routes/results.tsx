@@ -215,6 +215,13 @@ function Results() {
           </div>
         </div>
 
+        {audit.visualScanStatus === "failed" && (
+          <div className="mt-3 flex shrink-0 items-center gap-2 rounded-md border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-ink">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-warn" />
+            <span>تعذّر الاتصال بخدمة التحليل البصري لهذا الفحص — النتيجة المعروضة تعتمد على الفحوصات الكودية فقط (بدون تحليل الذكاء الاصطناعي).</span>
+          </div>
+        )}
+
         {/* Dashboard body: rules (right) + screenshot (left), each scrolls independently on md+ */}
         <section className="mt-4 grid gap-4 print:grid-cols-1 print:overflow-visible md:min-h-0 md:flex-1 md:grid-cols-12 md:overflow-hidden">
           <div className="md:col-span-7 md:min-h-0">

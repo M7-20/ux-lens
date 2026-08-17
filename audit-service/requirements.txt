@@ -2,8 +2,7 @@ fastapi
 uvicorn[standard]
 playwright==1.61.0
 pillow
-google-genai
-httpx
+openai
 pydantic
 python-dotenv
 python-jose[cryptography]

@@ -3,7 +3,7 @@
     "source": "UX Lens Universal Guidelines",
     "rule_prefix": "UX",
     "total_rules": 27,
-    "note": "27 قاعدة UX عامة فريدة (لا تتداخل مع DGA وقابلة للفحص الآلي) — 20 قابلة للفحص الكودي (detection=code)، 7 تحتاج تحليل بصري عبر Gemini (detection=visual)."
+    "note": "27 قاعدة UX عامة فريدة (لا تتداخل مع DGA وقابلة للفحص الآلي) — 20 قابلة للفحص الكودي (detection=code)، 7 تحتاج تحليل بصري عبر API الوزارة (detection=visual)."
   },
   "rules": [
     {

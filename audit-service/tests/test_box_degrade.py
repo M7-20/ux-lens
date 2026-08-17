@@ -1,6 +1,6 @@
 """Tests for the "no box_2d from the provider must not drop the finding"
 behaviour in engine.py and ux/ux_visual_checks.py — the downstream half of
-the vision-provider abstraction (see vision_provider.py's module docstring).
+the ministry VLM scan (see ux/ux_visual_checks.py).
 Both modules keep their own independent copies of to_box()/dedup() by design
 (see ux/ux_visual_checks.py's header comment on why) — this file mirrors
 that and tests both copies rather than assuming they stay identical forever.
