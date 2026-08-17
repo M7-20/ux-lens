@@ -10,9 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-// تجاوز ألوان المنصة — يُحمَّل بعد appCss عمداً ليتفوّق عليه بترتيب
-// الإعلان. ملف خاص بواحة لا يلمسه فريق ux-lens، فلا يتعارض عند الدمج.
-import wahaThemeCss from "../waha-theme.css?url";
 import { ThemedBackground } from "@/components/themed-background";
 import { initWahaPrefsSync } from "@/lib/waha-prefs";
 
@@ -64,7 +61,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: wahaThemeCss },
       { rel: "icon", href: `${import.meta.env.BASE_URL}logo.svg`, type: "image/svg+xml" },
       // Almarai مُستضاف ذاتياً (@font-face في styles.css) بدل Google Fonts CDN —
       // التطبيق يُنشر خلف بوابة معزولة (air-gapped)؛ طلب CDN خارجي كان سيفشل بصمت
