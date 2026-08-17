@@ -53,7 +53,7 @@ function Index() {
               className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
             >
               <Home className="h-5 w-5" />
-              الصفحة الرئيسية
+              فحص الصفحة الرئيسية
               <ArrowLeft className="h-4 w-4" />
             </button>
             <button
@@ -62,7 +62,7 @@ function Index() {
               className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
             >
               <Mail className="h-5 w-5" />
-              اتصل بنا
+              فحص صفحة الاتصال
               <ArrowLeft className="h-4 w-4" />
             </button>
           </div>
