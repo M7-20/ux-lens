@@ -1,18 +1,18 @@
 # UX LENS
 
-أداة داخلية لوزارة البيئة والمياه والزراعة لفحص التزام المواقع الحكومية بمعايير هيئة الحكومة الرقمية (DGA) ومعايير تجربة المستخدم العامة (UX) — فحص آلي يجمع بين تحليل DOM/CSS المباشر وتحليل بصري عبر Gemini للقطات الشاشة.
+أداة داخلية لوزارة البيئة والمياه والزراعة لفحص التزام المواقع الحكومية بمعايير هيئة الحكومة الرقمية (DGA) ومعايير تجربة المستخدم العامة (UX) — فحص آلي يجمع بين تحليل DOM/CSS المباشر وتحليل بصري عبر API الوزارة الداخلي للقطات الشاشة.
 
 ## البنية
 
 - **الفرونت إند** (`src/`): TanStack Start (React 19، SSR) + Vite + Tailwind CSS.
-- **الباك إند** (`audit-service/`): FastAPI + Playwright (التقاط لقطات الشاشة) + Google Gemini (التحليل البصري)، مع قاعدة SQLite خفيفة لمصادقة واحة (waha) وملفات JSON لسجل الفحوصات.
+- **الباك إند** (`audit-service/`): FastAPI + Playwright (التقاط لقطات الشاشة) + API الوزارة الداخلي (التحليل البصري، متوافق مع OpenAI)، مع قاعدة SQLite خفيفة لمصادقة واحة (waha) وملفات JSON لسجل الفحوصات.
 
 ## التشغيل محلياً
 
 ### المتطلبات
 - Node.js
 - Python 3.12+
-- مفتاح Gemini API
+- مفتاح API الوزارة (`MINISTRY_VLM_API_KEY`) ورابط الـendpoint (`MINISTRY_VLM_BASE_URL`)
 
 ### الفرونت إند
 ```sh
@@ -28,7 +28,7 @@ python -m venv venv
 ./venv/Scripts/activate   # أو source venv/bin/activate على Linux/Mac
 pip install -r requirements.txt
 playwright install chromium
-cp .env.example .env      # وعدّل GEMINI_API_KEY بداخله
+cp .env.example .env      # وعدّل MINISTRY_VLM_API_KEY وMINISTRY_VLM_BASE_URL بداخله
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 يشتغل افتراضياً على `http://localhost:8000`، والفرونت إند يتصل فيه تلقائياً بدون أي إعداد إضافي بالتطوير المحلي.
@@ -43,4 +43,4 @@ docker compose up
 ## بُني باستخدام
 
 - TanStack Start · TypeScript · React · Tailwind CSS
-- FastAPI · Playwright · Google Gemini
+- FastAPI · Playwright · API الوزارة الداخلي

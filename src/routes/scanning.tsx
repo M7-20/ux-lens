@@ -40,7 +40,7 @@ function Scanning() {
     const timers: ReturnType<typeof setTimeout>[] = [];
 
     // Steps 0-1 (opening the page, reading its structure) are genuinely fast —
-    // give them a short head start. Step 2 (the Gemini scan) is where almost all
+    // give them a short head start. Step 2 (the ministry VLM scan) is where almost all
     // the real time goes, so it stays "in progress" until the actual audit call
     // resolves — no fake timers pretending it's done before it is.
     timers.push(setTimeout(() => active && setStep((s) => Math.max(s, 1)), 900));

@@ -1,8 +1,8 @@
-# طبقة القواعد البصرية لـ UX (تحتاج Gemini) — معزولة تماماً عن محرك DGA (engine.py).
+# طبقة القواعد البصرية لـ UX (تحتاج API الوزارة) — معزولة تماماً عن محرك DGA (engine.py).
 # لا شيء هنا يستورد من engine.py (لا VISUAL_RULES، لا CODE_CHECKED، لا build_prompt، لا Violation،
 # لا gen/to_box/dedup الخاصة بـ DGA) — كل الدوال المساعدة اللازمة مُعاد كتابتها محلياً هنا عمداً،
 # حتى لو تشابهت المنطق، حفاظاً على استقلالية كاملة: حذف هذا الملف + تعطيل ENABLE_UX_LAYER
-# لا يؤثران على DGA إطلاقاً. يستخدم نفس عميل Gemini (genai.Client) الممرَّر من engine.py —
+# لا يؤثران على DGA إطلاقاً. يستخدم نفس عميل الوزارة (OpenAI-compatible) الممرَّر من engine.py —
 # إعادة استخدام الاتصال فقط، لا القواعد ولا البرومبت ولا منطق DGA.
 import base64
 import hashlib
@@ -12,13 +12,9 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Literal
 
-from google import genai
-from google.genai import errors, types
 from openai import APIConnectionError, APIStatusError, OpenAI
 from PIL import Image
-from pydantic import BaseModel
 
 from ux.ux_checks import RULE_BY_ID, UX_RULES, region_from_box
 
@@ -27,12 +23,9 @@ DATA_DIR = BASE_DIR.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 CACHE_PATH = DATA_DIR / "ux_site_cache.json"
 
-MODEL = "gemini-3.5-flash"
-
 MINISTRY_VLM_API_KEY = os.environ.get("MINISTRY_VLM_API_KEY", "")
 MINISTRY_VLM_BASE_URL = os.environ.get("MINISTRY_VLM_BASE_URL", "")
-MINISTRY_VLM_MODEL = "qwen2.5-vl-72b"
-MINISTRY_ENABLED = bool(MINISTRY_VLM_API_KEY and MINISTRY_VLM_BASE_URL)
+MINISTRY_VLM_MODEL = "vision"
 
 TILE_HEIGHT = 1600
 OVERLAP = 200
@@ -40,15 +33,6 @@ DEDUP_IOU = 0.5
 MAX_TILES = 4
 
 UX_VISUAL_RULES = [r for r in UX_RULES if r.get("detection") == "visual"]
-
-
-class UXViolation(BaseModel):
-    box_2d: list[int]
-    rule_id: str
-    severity: Literal["Error", "Warning", "Info"]
-    confidence: Literal["عالية", "متوسطة", "منخفضة"]
-    evidence: str
-    recommendation: str
 
 
 def build_ux_visual_prompt() -> str:
@@ -60,12 +44,14 @@ def build_ux_visual_prompt() -> str:
 1. الصور الفوتوغرافية وصور الأخبار والمحتوى الإعلامي: محتواها ليس جزءاً من واجهة الموقع — لا تُبلّغ عن مخالفات داخلها.
 2. لا تُبلّغ عن عنصر بأنه "مفقود" إلا إذا فحصت الشريحة كاملة وتأكدت من غيابه.
 3. إن لم تكن متأكداً من مخالفة، اجعل confidence "منخفضة" أو لا تذكرها إطلاقاً — الدقة أهم من العدد.
-لكل مخالفة: box_2d [ymin,xmin,ymax,xmax] 0-1000 + rule_id + severity + confidence + evidence + recommendation.
+جميع الحقول النصية الحرة (evidence وrecommendation) يجب أن تكون بالكامل باللغة العربية الفصحى — ممنوع أي كلمة إنجليزية في evidence أو recommendation إلا أسماء تقنية لا مقابل عربي شائع لها (مثل CSS أو aria-current).
+لكل مخالفة حدد الموقع عبر box_2d: تخيّل الصورة مقسّمة لشبكة 3×3 متساوية (يمين/وسط/يسار × أعلى/وسط/أسفل)، واختر اسم الخانة اللي يقع فيها مركز العنصر المخالف — قيمة واحدة فقط من: "أعلى-يسار", "أعلى-وسط", "أعلى-يمين", "وسط-يسار", "وسط-وسط", "وسط-يمين", "أسفل-يسار", "أسفل-وسط", "أسفل-يمين". لا تُرجِع إحداثيات رقمية أبداً.
+مع كل مخالفة أضف أيضاً: rule_id + severity + confidence + evidence + recommendation.
 لا تُرجِع مخالفة بدون دليل بصري واضح في evidence."""
 
 
 PROMPT = build_ux_visual_prompt()
-RULES_SIG = hashlib.md5((MODEL + PROMPT).encode()).hexdigest()[:10]
+RULES_SIG = hashlib.md5((MINISTRY_VLM_MODEL + PROMPT).encode()).hexdigest()[:10]
 
 
 def _load_cache() -> dict:
@@ -77,16 +63,6 @@ def _save_cache(cache: dict) -> None:
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False)
     tmp.replace(CACHE_PATH)
-
-
-def gen(client: genai.Client, **kw):
-    for a in range(1, 5):
-        try:
-            return client.models.generate_content(**kw)
-        except (errors.ServerError, errors.ClientError) as e:
-            if not (isinstance(e, errors.ServerError) or getattr(e, "code", None) == 429) or a == 4:
-                raise
-            time.sleep(5 * a)
 
 
 def gen_ministry(client: OpenAI, **kw):
@@ -113,12 +89,19 @@ MINISTRY_VIOLATIONS_SCHEMA = {
                     "items": {
                         "type": "object",
                         "properties": {
-                            "box_2d": {"type": "array", "items": {"type": "integer"}},
+                            "box_2d": {
+                                "type": "string",
+                                "enum": [
+                                    "أعلى-يسار", "أعلى-وسط", "أعلى-يمين",
+                                    "وسط-يسار", "وسط-وسط", "وسط-يمين",
+                                    "أسفل-يسار", "أسفل-وسط", "أسفل-يمين",
+                                ],
+                            },
                             "rule_id": {"type": "string"},
                             "severity": {"type": "string", "enum": ["Error", "Warning", "Info"]},
                             "confidence": {"type": "string", "enum": ["عالية", "متوسطة", "منخفضة"]},
-                            "evidence": {"type": "string"},
-                            "recommendation": {"type": "string"},
+                            "evidence": {"type": "string", "description": "بالعربي فقط"},
+                            "recommendation": {"type": "string", "description": "بالعربي فقط"},
                         },
                         "required": ["box_2d", "rule_id", "severity", "confidence", "evidence", "recommendation"],
                         "additionalProperties": False,
@@ -152,6 +135,29 @@ def to_box(it, W, th, y0):
     if bw > 0.9 * W and bh < 12:
         return None
     return bx
+
+
+GRID_CELLS = {
+    "أعلى-يسار": [0, 0, 333, 333],
+    "أعلى-وسط": [0, 333, 333, 667],
+    "أعلى-يمين": [0, 667, 333, 1000],
+    "وسط-يسار": [333, 0, 667, 333],
+    "وسط-وسط": [333, 333, 667, 667],
+    "وسط-يمين": [333, 667, 667, 1000],
+    "أسفل-يسار": [667, 0, 1000, 333],
+    "أسفل-وسط": [667, 333, 1000, 667],
+    "أسفل-يمين": [667, 667, 1000, 1000],
+}
+
+
+def grid_to_box_2d(items: list[dict]) -> list[dict]:
+    out = []
+    for it in items:
+        box = GRID_CELLS.get(it.get("box_2d"))
+        if box is None:
+            continue
+        out.append({**it, "box_2d": box})
+    return out
 
 
 def overlap_frac(box, rects):
@@ -194,7 +200,7 @@ def dedup(viols, thr):
     return kept
 
 
-def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
+def _scan_sync(client: OpenAI, page: dict) -> list[dict]:
     """يُنفَّذ في thread منفصل (نفس أسلوب DGA) — لا يُستدعى مباشرة من كود async."""
     if not UX_VISUAL_RULES:
         return []
@@ -217,39 +223,29 @@ def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
         tile_note = f"\n(هذه الشريحة {i + 1} من {len(tiles)} من صفحة طويلة)"
         time.sleep(0.8 * i)
         try:
-            if MINISTRY_ENABLED:
-                buf = io.BytesIO()
-                crop.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode()
-                r = gen_ministry(client, model=MINISTRY_VLM_MODEL, temperature=0, max_tokens=8192, timeout=30,
-                        reasoning_effort="none",
-                        response_format=MINISTRY_VIOLATIONS_SCHEMA,
-                        messages=[
-                            {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]} in Arabic. No masks. Max 10."},
-                            {"role": "user", "content": [
-                                {"type": "text", "text": PROMPT + tile_note},
-                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
-                            ]},
-                        ])
-                items = json.loads(r.choices[0].message.content)["violations"]
-            else:
-                r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
-                        config=types.GenerateContentConfig(
-                            system_instruction="Return violations as JSON array in Arabic. No masks. Max 10.",
-                            temperature=0, max_output_tokens=8192,
-                            response_mime_type="application/json", response_schema=list[UXViolation],
-                            thinking_config=types.ThinkingConfig(thinking_budget=0),
-                            http_options=types.HttpOptions(timeout=30000)))
-                items = json.loads(r.text)
+            buf = io.BytesIO()
+            crop.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            r = gen_ministry(client, model=MINISTRY_VLM_MODEL, temperature=0, max_tokens=8192, timeout=30,
+                    reasoning_effort="none",
+                    response_format=MINISTRY_VIOLATIONS_SCHEMA,
+                    messages=[
+                        {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]}. ALL text fields (evidence, recommendation) MUST be written entirely in Arabic — no English words except untranslatable technical terms. No masks. Max 10."},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": PROMPT + tile_note},
+                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                        ]},
+                    ])
+            items = grid_to_box_2d(json.loads(r.choices[0].message.content)["violations"])
             ok = True
         except Exception:
             items, ok = [], False
         return i, key, items, False, ok
 
-    with ThreadPoolExecutor(max_workers=min(4, len(tiles))) as ex:
+    with ThreadPoolExecutor(max_workers=min(2, len(tiles))) as ex:
         results = sorted(ex.map(lambda a: analyze(*a), [(i, y0, y1) for i, (y0, y1) in enumerate(tiles)]))
 
-    fresh = [(k, it) for _, k, it, cached, _ok in results if not cached]
+    fresh = [(k, it) for _, k, it, cached, ok in results if not cached and ok]
     if fresh:
         for k, it in fresh:
             cache[k] = it
@@ -279,15 +275,17 @@ def _scan_sync(client: genai.Client, page: dict) -> list[dict]:
     return dedup(vv, DEDUP_IOU), any_success
 
 
-def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
-    """يرجع قائمة نتائج بنفس شكل مخرجات run_ux_checks (id/category/status/title/description/
-    recommendation/evidence/region/source='UX') — لكل الـ7 قواعد البصرية دائماً، بلا أي استدعاء لكود DGA.
-    إذا فشل التحليل البصري بالكامل، القواعد السبع تُبلَّغ 'undetermined' لا 'pass' — لا تخمين."""
+def run_ux_visual_checks(client: OpenAI, page: dict) -> tuple[list[dict], bool]:
+    """يرجع (قائمة نتائج بنفس شكل مخرجات run_ux_checks، هل نجح تحليل بصري واحد على الأقل).
+    القائمة بنفس شكل id/category/status/title/description/recommendation/evidence/region/source='UX'
+    — لكل الـ7 قواعد البصرية دائماً، بلا أي استدعاء لكود DGA.
+    إذا فشل التحليل البصري بالكامل، القواعد السبع تُبلَّغ 'undetermined' لا 'pass' — لا تخمين،
+    والعنصر الثاني بالمُرجَع يكون False ليعرف المستدعي إن هذي النتيجة غير موثوقة."""
     W, H = page["shot_width"], page["shot_height"]
     out: list[dict] = []
 
     if not UX_VISUAL_RULES:
-        return out
+        return out, True
 
     findings, any_success = _scan_sync(client, page)
 
@@ -297,10 +295,10 @@ def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
                 "id": r["id"], "category": r["category"], "status": "undetermined",
                 "title": r["title"], "description": r["description"],
                 "recommendation": r.get("recommendation"),
-                "evidence": "تعذّر تحليل الصفحة بصرياً عبر Gemini لتقييم هذه القاعدة (فشل الاتصال أو التحليل في كل الشرائح).",
+                "evidence": "تعذّر تحليل الصفحة بصرياً عبر API الوزارة لتقييم هذه القاعدة (فشل الاتصال أو التحليل في كل الشرائح).",
                 "region": None, "source": "UX",
             })
-        return out
+        return out, False
 
     by_rule: dict[str, list[dict]] = {}
     for v in findings:
@@ -324,7 +322,7 @@ def run_ux_visual_checks(client: genai.Client, page: dict) -> list[dict]:
             "evidence": evidence, "region": region,
             "source": "UX",
         })
-    return out
+    return out, True
 
 
 def region_from_box_pixels(box, W, H):

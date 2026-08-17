@@ -3,7 +3,7 @@
 #  من CSS/DOM (يقين): الخط · الزوايا · المسافات · الألوان التفاعلية ·
 #    تباين النص (WCAG) · تتبّع العناوين · عرض الفقرات · أحجام الخط ·
 #    التدرجات · تباين حقول الإدخال · RTL · شريط الحالة
-#  من الصورة (Gemini): بقية القواعد، بمستوى ثقة ودليل
+#  من الصورة (API الوزارة): بقية القواعد، بمستوى ثقة ودليل
 # ============================================================
 import asyncio
 import base64
@@ -18,15 +18,11 @@ from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
 from urllib.parse import urlparse
 
-from google import genai
-from google.genai import errors, types
 from openai import APIConnectionError, APIStatusError, OpenAI
 from PIL import Image
 from playwright.async_api import async_playwright
-from pydantic import BaseModel
 
 logger = logging.getLogger("uxlens")
 logger.setLevel(logging.INFO)
@@ -49,12 +45,9 @@ OVERLAP = 200
 DEDUP_IOU = 0.5      # عتبة اعتبار إطارين "نفس المخالفة"
 IMG_OVERLAP = 0.7    # نسبة وقوع المخالفة داخل صورة محتوى لاستبعادها
 MAX_TILES = 4        # سقف الشرائح — يضمن بقاء التحليل ضمن الوقت
-MODEL = "gemini-3.5-flash"
-
 MINISTRY_VLM_API_KEY = os.environ.get("MINISTRY_VLM_API_KEY", "")
 MINISTRY_VLM_BASE_URL = os.environ.get("MINISTRY_VLM_BASE_URL", "")
-MINISTRY_VLM_MODEL = "qwen2.5-vl-72b"
-MINISTRY_ENABLED = bool(MINISTRY_VLM_API_KEY and MINISTRY_VLM_BASE_URL)
+MINISTRY_VLM_MODEL = "vision"
 
 with open(BASE_DIR / "dga" / "dga-rules.json", encoding="utf-8") as f:
     DGA = json.load(f)
@@ -664,16 +657,7 @@ def run_checks(page: dict) -> dict:
             "fzv": fzv, "grv": grv, "g_unv": g_unv, "uiv": uiv, "u_unv": u_unv, "rtv": rtv}
 
 
-# ============ 3) الفحص البصري (Gemini) ============
-class Violation(BaseModel):
-    box_2d: list[int]
-    rule_id: str
-    severity: Literal["Error", "Warning", "Info"]
-    confidence: Literal["عالية", "متوسطة", "منخفضة"]
-    evidence: str
-    recommendation: str
-
-
+# ============ 3) الفحص البصري (API الوزارة) ============
 def build_prompt() -> str:
     return f"""دقّق هذا الجزء من صفحة حكومية سعودية مقابل قواعد DGA البصرية باللغة العربية.
 قارن القيم الفعلية (ألوان، مسافات) مقابل المعتمدة:
@@ -686,22 +670,14 @@ def build_prompt() -> str:
 1. الصور الفوتوغرافية وصور الأخبار والمحتوى الإعلامي: ألوانها ومحتواها ليست جزءاً من واجهة الموقع — لا تُبلّغ عن مخالفات ألوان أو تدرجات أو طباعة داخلها.
 2. لا تُبلّغ عن عنصر بأنه "مفقود" (Missing) إلا إذا فحصت الشريحة كاملة وتأكدت من غيابه. شريط الحالة الحكومي هو شريط رفيع أعلى الصفحة فيه نص مثل "موقع حكومي رسمي/مسجل لدى هيئة الحكومة الرقمية" — إن رأيت هذا النص فالقاعدة ملتزم بها ولا تذكرها.
 3. إن لم تكن متأكداً من مخالفة، اجعل confidence "منخفضة" أو لا تذكرها إطلاقاً — الدقة أهم من العدد.
-لكل مخالفة: box_2d [ymin,xmin,ymax,xmax] 0-1000 + rule_id + severity + confidence + evidence + recommendation.
+جميع الحقول النصية الحرة (evidence وrecommendation) يجب أن تكون بالكامل باللغة العربية الفصحى — ممنوع أي كلمة إنجليزية في evidence أو recommendation إلا أسماء تقنية لا مقابل عربي شائع لها (مثل CSS أو aria-current).
+لكل مخالفة حدد الموقع عبر box_2d: تخيّل الصورة مقسّمة لشبكة 3×3 متساوية (يمين/وسط/يسار × أعلى/وسط/أسفل)، واختر اسم الخانة اللي يقع فيها مركز العنصر المخالف — قيمة واحدة فقط من: "أعلى-يسار", "أعلى-وسط", "أعلى-يمين", "وسط-يسار", "وسط-وسط", "وسط-يمين", "أسفل-يسار", "أسفل-وسط", "أسفل-يمين". لا تُرجِع إحداثيات رقمية أبداً.
+مع كل مخالفة أضف أيضاً: rule_id + severity + confidence + evidence + recommendation.
 لا تُرجِع مخالفة بدون دليل بصري واضح في evidence."""
 
 
 PROMPT = build_prompt()
-RULES_SIG = hashlib.md5((MODEL + PROMPT).encode()).hexdigest()[:10]
-
-
-def gen(client: genai.Client, **kw):
-    for a in range(1, 5):
-        try:
-            return client.models.generate_content(**kw)
-        except (errors.ServerError, errors.ClientError) as e:
-            if not (isinstance(e, errors.ServerError) or getattr(e, "code", None) == 429) or a == 4:
-                raise
-            time.sleep(5 * a)
+RULES_SIG = hashlib.md5((MINISTRY_VLM_MODEL + PROMPT).encode()).hexdigest()[:10]
 
 
 def gen_ministry(client: OpenAI, **kw):
@@ -728,12 +704,19 @@ MINISTRY_VIOLATIONS_SCHEMA = {
                     "items": {
                         "type": "object",
                         "properties": {
-                            "box_2d": {"type": "array", "items": {"type": "integer"}},
+                            "box_2d": {
+                                "type": "string",
+                                "enum": [
+                                    "أعلى-يسار", "أعلى-وسط", "أعلى-يمين",
+                                    "وسط-يسار", "وسط-وسط", "وسط-يمين",
+                                    "أسفل-يسار", "أسفل-وسط", "أسفل-يمين",
+                                ],
+                            },
                             "rule_id": {"type": "string"},
                             "severity": {"type": "string", "enum": ["Error", "Warning", "Info"]},
                             "confidence": {"type": "string", "enum": ["عالية", "متوسطة", "منخفضة"]},
-                            "evidence": {"type": "string"},
-                            "recommendation": {"type": "string"},
+                            "evidence": {"type": "string", "description": "بالعربي فقط"},
+                            "recommendation": {"type": "string", "description": "بالعربي فقط"},
                         },
                         "required": ["box_2d", "rule_id", "severity", "confidence", "evidence", "recommendation"],
                         "additionalProperties": False,
@@ -767,6 +750,29 @@ def to_box(it, W, th, y0):
     if bw > 0.9 * W and bh < 12:
         return None
     return bx
+
+
+GRID_CELLS = {
+    "أعلى-يسار": [0, 0, 333, 333],
+    "أعلى-وسط": [0, 333, 333, 667],
+    "أعلى-يمين": [0, 667, 333, 1000],
+    "وسط-يسار": [333, 0, 667, 333],
+    "وسط-وسط": [333, 333, 667, 667],
+    "وسط-يمين": [333, 667, 667, 1000],
+    "أسفل-يسار": [667, 0, 1000, 333],
+    "أسفل-وسط": [667, 333, 1000, 667],
+    "أسفل-يمين": [667, 667, 1000, 1000],
+}
+
+
+def grid_to_box_2d(items: list[dict]) -> list[dict]:
+    out = []
+    for it in items:
+        box = GRID_CELLS.get(it.get("box_2d"))
+        if box is None:
+            continue
+        out.append({**it, "box_2d": box})
+    return out
 
 
 def overlap_frac(box, rects, mode="box"):
@@ -812,7 +818,7 @@ def dedup(viols, thr):
     return kept
 
 
-def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict], list[dict]]:
+def _run_visual_scan_sync(client: OpenAI, page: dict) -> tuple[list[dict], list[dict], bool]:
     W, H = page["shot_width"], page["shot_height"]
     th = TILE_HEIGHT
     tiles = make_tiles(H, th, OVERLAP)
@@ -829,58 +835,50 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
         key = (f"{page['name']}|{W}x{H}|{i}|{RULES_SIG}|"
                + hashlib.md5(crop.tobytes()).hexdigest()[:10])
         if key in cache:
-            return i, key, cache[key], True
+            return i, key, cache[key], True, True
         tile_note = (f"\n(هذه الشريحة {i + 1} من {len(tiles)} من صفحة طويلة"
                      + ("" if i == 0 else " — أعلى الصفحة ليس فيها؛ لا تُقيّم قواعد الهيدر أو شريط الحالة")
                      + ")")
         time.sleep(0.8 * i)
         try:
-            if MINISTRY_ENABLED:
-                buf = io.BytesIO()
-                crop.save(buf, format="PNG")
-                b64 = base64.b64encode(buf.getvalue()).decode()
-                r = gen_ministry(client, model=MINISTRY_VLM_MODEL, temperature=0, max_tokens=8192, timeout=30,
-                        reasoning_effort="none",
-                        response_format=MINISTRY_VIOLATIONS_SCHEMA,
-                        messages=[
-                            {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]} in Arabic. No masks. Max 15."},
-                            {"role": "user", "content": [
-                                {"type": "text", "text": PROMPT + tile_note},
-                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
-                            ]},
-                        ])
-                items = json.loads(r.choices[0].message.content)["violations"]
-            else:
-                r = gen(client, model=MODEL, contents=[crop, PROMPT + tile_note],
-                        config=types.GenerateContentConfig(
-                            system_instruction="Return violations as JSON array in Arabic. No masks. Max 15.",
-                            temperature=0, max_output_tokens=8192,
-                            response_mime_type="application/json", response_schema=list[Violation],
-                            thinking_config=types.ThinkingConfig(thinking_budget=0),
-                            http_options=types.HttpOptions(timeout=30000)))
-                items = json.loads(r.text)
+            buf = io.BytesIO()
+            crop.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            r = gen_ministry(client, model=MINISTRY_VLM_MODEL, temperature=0, max_tokens=8192, timeout=30,
+                    reasoning_effort="none",
+                    response_format=MINISTRY_VIOLATIONS_SCHEMA,
+                    messages=[
+                        {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]}. ALL text fields (evidence, recommendation) MUST be written entirely in Arabic — no English words except untranslatable technical terms. No masks. Max 15."},
+                        {"role": "user", "content": [
+                            {"type": "text", "text": PROMPT + tile_note},
+                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                        ]},
+                    ])
+            items = grid_to_box_2d(json.loads(r.choices[0].message.content)["violations"])
+            ok = True
         except Exception:
-            items = []
-        return i, key, items, False
+            items, ok = [], False
+        return i, key, items, False, ok
 
-    with ThreadPoolExecutor(max_workers=min(4, len(tiles))) as ex:
+    with ThreadPoolExecutor(max_workers=min(2, len(tiles))) as ex:
         results = sorted(ex.map(lambda a: analyze(*a),
                                  [(i, y0, y1) for i, (y0, y1) in enumerate(tiles)]))
 
-    fresh = [(k, it) for _, k, it, cached in results if not cached]
+    fresh = [(k, it) for _, k, it, cached, ok in results if not cached and ok]
     if fresh:
         for k, it in fresh:
             cache[k] = it
         save_cache(cache)
 
-    cached_n = sum(1 for _, _, _, c in results if c)
+    cached_n = sum(1 for _, _, _, c, _ok in results if c)
     logger.info(f"visual scan: {cached_n}/{len(results)} tiles from cache, {len(results) - cached_n} analyzed fresh")
-    for i, _key, items, cached in results:
-        logger.info(f"visual scan tile {i + 1}/{len(tiles)}: {len(items)} raw findings ({'cache' if cached else 'fresh'})")
+    for i, _key, items, cached, ok in results:
+        note = "cache" if cached else ("fresh" if ok else "fresh, FAILED — not cached")
+        logger.info(f"visual scan tile {i + 1}/{len(tiles)}: {len(items)} raw findings ({note})")
 
     vv, on_imgs = [], []
     excluded_code = excluded_global = excluded_box = excluded_broken = 0
-    for i, key, items, cached in results:
+    for i, key, items, cached, _ok in results:
         y0, y1 = tiles[i]
         for it in items:
             rid = it.get("rule_id", "")
@@ -919,7 +917,8 @@ def _run_visual_scan_sync(client: genai.Client, page: dict) -> tuple[list[dict],
     deduped = dedup(vv, DEDUP_IOU)
     logger.info(f"dedup: {len(vv)} raw findings -> {len(deduped)} unique ({len(vv) - len(deduped)} merged)")
 
-    return deduped, dedup(on_imgs, DEDUP_IOU)
+    any_success = any(ok for _, _, _, _, ok in results)
+    return deduped, dedup(on_imgs, DEDUP_IOU), any_success
 
 
 # ============ 4) النتيجة والتجميع بشكل الواجهة (Audit) ============
@@ -1146,26 +1145,27 @@ def assemble_audit(url: str, page: dict, checks: dict, vv: list[dict], elapsed: 
 
 
 # ============ 5) نقطة الدخول ============
-async def run_audit(url: str, gemini_api_key: str) -> dict:
+async def run_audit(url: str) -> dict:
     t0 = time.time()
     page = await capture_page(url)
     checks = run_checks(page)
 
-    if MINISTRY_ENABLED:
-        client = OpenAI(api_key=MINISTRY_VLM_API_KEY, base_url=MINISTRY_VLM_BASE_URL)
-        ux_client = client
-    else:
-        client = genai.Client(api_key=gemini_api_key)
-        ux_client = genai.Client(api_key=gemini_api_key)
+    if not (MINISTRY_VLM_API_KEY and MINISTRY_VLM_BASE_URL):
+        raise RuntimeError("MINISTRY_VLM_API_KEY أو MINISTRY_VLM_BASE_URL غير مضبوطين — الفحص البصري يتطلب اتصال بـ API الوزارة.")
+    client = OpenAI(api_key=MINISTRY_VLM_API_KEY, base_url=MINISTRY_VLM_BASE_URL)
+    ux_client = client
     dga_visual_task = asyncio.to_thread(_run_visual_scan_sync, client, page)
     if ENABLE_UX_LAYER:
         from ux.ux_visual_checks import run_ux_visual_checks
         ux_visual_task = asyncio.to_thread(run_ux_visual_checks, ux_client, page)
-        (vv, _on_imgs), ux_visual_rules = await asyncio.gather(dga_visual_task, ux_visual_task)
+        (vv, _on_imgs, dga_ok), (ux_visual_rules, ux_ok) = await asyncio.gather(dga_visual_task, ux_visual_task)
+        visual_scan_ok = dga_ok and ux_ok
     else:
-        vv, _on_imgs = await dga_visual_task
+        vv, _on_imgs, dga_ok = await dga_visual_task
+        visual_scan_ok = dga_ok
 
     result = assemble_audit(url, page, checks, vv, elapsed=time.time() - t0)
+    result["visualScanStatus"] = "ok" if visual_scan_ok else "failed"
 
     # UX layer hook — دمج إضافي بعد اكتمال نتيجة DGA، لا يعدّل assemble_audit()/checks
     # الخاصة بـDGA. تعطيل ENABLE_UX_LAYER يُلغي هذه الكتلة بالكامل فيرجع للنتيجة الأصلية.
