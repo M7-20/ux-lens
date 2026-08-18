@@ -203,14 +203,14 @@ function Results() {
 
           <div className="mt-3 flex gap-2 md:mt-0">
             <Button asChild variant="outline" size="sm" className="rounded-md border-hairline bg-surface">
-              <Link to="/"><RefreshCw className="ml-1 h-3.5 w-3.5" />فحص جديد</Link>
+              <Link to="/"><RefreshCw className="me-1 h-3.5 w-3.5" />فحص جديد</Link>
             </Button>
             <Button
               size="sm"
               className="rounded-md bg-brand text-brand-foreground hover:bg-brand-deep"
               onClick={() => window.print()}
             >
-              <Download className="ml-1 h-3.5 w-3.5" />تصدير PDF
+              <Download className="me-1 h-3.5 w-3.5" />تصدير PDF
             </Button>
           </div>
         </div>
@@ -282,7 +282,7 @@ function Results() {
                 </div>
               </div>
 
-              <div className="space-y-2 print:overflow-visible md:min-h-0 md:flex-1 md:overflow-y-auto md:pl-1">
+              <div className="space-y-2 print:overflow-visible md:min-h-0 md:flex-1 md:overflow-y-auto md:pe-1">
                 {rules.map((r) => (
                   <RuleRow
                     key={r.id}
@@ -423,7 +423,7 @@ function RuleRow({
     >
       <button
         onClick={() => { const next = !open; setOpen(next); onActivate(rule, next); }}
-        className="flex w-full items-center gap-4 px-4 py-3 text-right transition hover:bg-muted md:px-5"
+        className="flex w-full items-center gap-4 px-4 py-3 transition hover:bg-muted md:px-5"
         aria-expanded={open}
       >
         <StatusIcon status={rule.status} />
@@ -449,7 +449,7 @@ function RuleRow({
             <p className="text-sm leading-relaxed text-pass">لا توجد ملاحظات — هذا المعيار مستوفى بالكامل.</p>
           ) : null}
           {!isPass && !isNeutral && rule.recommendation && (
-            <div className="mt-3 rounded-md border-r-2 border-hairline bg-surface p-3">
+            <div className="mt-3 rounded-md border-s-2 border-hairline bg-surface p-3">
               <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية
               </div>
