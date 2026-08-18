@@ -89,7 +89,7 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white px-4 py-3 text-right transition hover:border-brand/40"
+                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-surface px-4 py-3 text-right transition hover:border-brand/40"
               >
                 {/* العمود الثالث (يمين): الرابط + التاريخ + الحالة */}
                 <div className="min-w-0">

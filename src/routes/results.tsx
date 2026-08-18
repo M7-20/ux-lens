@@ -202,7 +202,7 @@ function Results() {
           </div>
 
           <div className="mt-3 flex gap-2 md:mt-0">
-            <Button asChild variant="outline" size="sm" className="rounded-md border-hairline bg-white">
+            <Button asChild variant="outline" size="sm" className="rounded-md border-hairline bg-surface">
               <Link to="/"><RefreshCw className="ml-1 h-3.5 w-3.5" />فحص جديد</Link>
             </Button>
             <Button
@@ -238,7 +238,7 @@ function Results() {
                       "rounded-md border px-3 py-1.5 text-xs font-bold transition",
                       activeSource === s.k
                         ? "border-brand bg-brand text-brand-foreground"
-                        : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
+                        : "border-hairline bg-surface text-muted-foreground hover:border-brand/40 hover:text-brand"
                     )}
                   >
                     {SOURCE_LABELS[s.k]} <span className="font-mono tabular-nums">({s.n})</span>
@@ -253,7 +253,7 @@ function Results() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={toggleExpandAll}
-                    className="rounded-md border border-hairline bg-white px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-brand/40 hover:text-brand print:hidden"
+                    className="rounded-md border border-hairline bg-surface px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-brand/40 hover:text-brand print:hidden"
                   >
                     {allExpanded ? "طيّ الكل" : "فتح الكل"}
                   </button>
@@ -273,7 +273,7 @@ function Results() {
                         "rounded-md border px-3 py-1 text-xs font-medium transition",
                         filter === c.k
                           ? "border-brand bg-brand text-brand-foreground"
-                          : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
+                          : "border-hairline bg-surface text-muted-foreground hover:border-brand/40 hover:text-brand"
                       )}
                     >
                       {c.label} <span className="font-mono tabular-nums">({c.n})</span>
@@ -417,7 +417,7 @@ function RuleRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-md border bg-white transition",
+        "overflow-hidden rounded-md border bg-surface transition",
         active ? "border-brand ring-1 ring-brand/30" : "border-hairline"
       )}
     >
@@ -449,7 +449,7 @@ function RuleRow({
             <p className="text-sm leading-relaxed text-pass">لا توجد ملاحظات — هذا المعيار مستوفى بالكامل.</p>
           ) : null}
           {!isPass && !isNeutral && rule.recommendation && (
-            <div className="mt-3 rounded-md border-r-2 border-hairline bg-white p-3">
+            <div className="mt-3 rounded-md border-r-2 border-hairline bg-surface p-3">
               <div className="mb-1 flex items-center gap-1.5 text-xs font-bold text-ink">
                 <ArrowRight className="h-3.5 w-3.5" /> التوصية
               </div>
@@ -527,7 +527,7 @@ function ScreenshotPanel({
                   "inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-xs font-medium transition",
                   active === i
                     ? "border-brand bg-brand text-brand-foreground"
-                    : "border-hairline bg-white text-muted-foreground hover:border-brand/40 hover:text-brand"
+                    : "border-hairline bg-surface text-muted-foreground hover:border-brand/40 hover:text-brand"
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
