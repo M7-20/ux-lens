@@ -53,7 +53,7 @@ function Index() {
               className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
             >
               <Home className="h-5 w-5" />
-              الصفحة الرئيسية
+              فحص الصفحة الرئيسية
               <ArrowLeft className="h-4 w-4" />
             </button>
             <button
@@ -62,7 +62,7 @@ function Index() {
               className="flex h-14 flex-1 items-center justify-center gap-2 rounded-md bg-brand px-8 text-base font-semibold text-brand-foreground transition hover:bg-brand-deep active:scale-[0.98]"
             >
               <Mail className="h-5 w-5" />
-              اتصل بنا
+              فحص صفحة الاتصال
               <ArrowLeft className="h-4 w-4" />
             </button>
           </div>
@@ -89,7 +89,7 @@ function Index() {
               <button
                 key={r.url + r.scannedAt}
                 onClick={() => submit(r.url)}
-                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-white px-4 py-3 text-right transition hover:border-brand/40"
+                className="group flex items-center justify-between gap-4 rounded-md border border-hairline bg-surface px-4 py-3 transition hover:border-brand/40"
               >
                 {/* العمود الثالث (يمين): الرابط + التاريخ + الحالة */}
                 <div className="min-w-0">
@@ -105,7 +105,7 @@ function Index() {
                 </div>
 
                 {/* العمود الثاني (وسط): معلومة المعايير */}
-                <div className="flex shrink-0 flex-col items-center gap-1.5 border-r border-hairline pr-4">
+                <div className="flex shrink-0 flex-col items-center gap-1.5 border-s border-hairline ps-4">
                   <div className="flex items-center gap-1 text-sm font-bold text-brand">
                     <ListChecks className="h-4 w-4" />
                     54 <span className="font-normal text-muted-foreground">Rules</span>

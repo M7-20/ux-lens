@@ -97,7 +97,7 @@ function Scanning() {
                 return (
                   <li
                     key={label}
-                    className={`flex items-center gap-3 rounded-md border bg-white px-4 py-2.5 transition ${
+                    className={`flex items-center gap-3 rounded-md border bg-surface px-4 py-2.5 transition ${
                       done ? "border-pass/30" : active ? "border-brand" : "border-hairline"
                     }`}
                   >

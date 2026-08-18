@@ -138,54 +138,40 @@
   --destructive: var(--fail);
   --destructive-foreground: #FFFFFF;
   --ring: var(--brand);
+
+  --hover: var(--muted);
+  --ink-secondary: var(--muted-foreground);
+  --border-strong: var(--hairline);
 }
 
-/* waha ONBOARDING.md §9 — الوضع الداكن يتبع rail واحة (data-theme/.dark على
-   <html>، راجع src/lib/waha-prefs.ts)، لا مفتاح داخلي خاص بالتطبيق. تدرّج
-   داكن مقابل لكل متغيّر معرَّف أعلاه فقط — تمريرة أولى معقولة (ليست جولة
-   تصميم كاملة) حتى يكون لتبديل الـtheme أثر مرئي فعلي بدل مجرد تغيير سمة HTML
-   بلا تأثير. */
-.dark {
-  --background: #0D1210;
-  --surface: #151B18;
-  --ink: #F3F4F6;
-  --foreground: #F3F4F6;
-  --muted: #1F2937;
-  --muted-foreground: #9CA3AF;
-  --hairline: #283330;
-  --border: #283330;
-  --input: #283330;
-
-  --brand: #22A06B;
-  --brand-deep: #15734A;
-  --brand-foreground: #06120C;
-  --gold: #9CA3AF;
-  --panel: #1F2937;
-  --panel-foreground: #F9FAFB;
-
-  --secondary: #1F2937;
-  --secondary-foreground: var(--ink);
-  --accent: #1F2937;
-  --accent-foreground: var(--ink);
-
-  --card: var(--surface);
-  --card-foreground: var(--ink);
-  --popover: var(--surface);
-  --popover-foreground: var(--ink);
-
-  --pass: var(--brand);
-  --warn: #FB923C;
-  --fail: #F87171;
+/* waha ONBOARDING.md §9.1 — باليت داكنة موحّدة عبر المنصة (رمادي محايد، بدون أي لون
+   دافئ/بارد). القيم منسوخة حرفياً من الجدول — --brand وتوابعه فقط تبقى هويتنا الخاصة،
+   بدون أي "accent" مشترك (الدليل نفسه يقول صراحة الأخضر يبقى ملكنا). */
+[data-theme="dark"] {
+  --background: #212121;
+  --surface: #2f2f2f;
+  --muted: #2f2f2f;
+  --hover: #424242;
+  --ink: #ececec;
+  --foreground: #ececec;
+  --ink-secondary: #cdcdcd;
+  --muted-foreground: #999696;
+  --hairline: #2f2f2f;
+  --border: #2f2f2f;
+  --border-strong: #424242;
+  --warn: #fbbf24;
+  --fail: #f97066;
   --destructive: var(--fail);
-  --destructive-foreground: #1F0A0A;
-  --ring: var(--brand);
 }
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgb(236 236 236 / 0.22); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgb(236 236 236 / 0.36); }
 
 @layer base {
   * { border-color: var(--color-border); }
-  /* لا "direction: rtl" ثابتة هنا عمداً — سمة dir على <html> (افتراضياً rtl،
-     راجع __root.tsx وsrc/lib/waha-prefs.ts) هي ما يقرر الاتجاه فعلياً؛ قاعدة
-     مؤلَّفة هنا كانت ستتفوّق على سمة dir وتُبطل تبديل اللغة إلى ltr بالكامل. */
+  /* الاتجاه يتبع سمة dir على <html> فقط (تُضبط ثابتة عربي/RTL افتراضياً بـ __root.tsx،
+     وديناميكياً عبر waha ONBOARDING.md §9 — prefs.ts) — لا نفرضه هنا بقاعدة CSS ثابتة
+     لأنها كانت ستتجاوز أي تبديل LTR ديناميكي بغض النظر عن قيمة dir الفعلية. */
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

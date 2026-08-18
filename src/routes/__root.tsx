@@ -11,7 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ThemedBackground } from "@/components/themed-background";
-import { initWahaPrefsSync } from "@/lib/waha-prefs";
+import { PREFS_BOOTSTRAP_SCRIPT, useWahaPrefs } from "@/lib/prefs";
 
 function NotFoundComponent() {
   return (
@@ -68,6 +68,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // له حالياً، فيرتد المتصفح لبقية سلسلة --font-mono (ui-monospace/SFMono-Regular/
       // monospace) — نفس الفكرة قابلة للتطبيق عليه لاحقاً إن تكرّر الاحتياج.
     ],
+    // waha ONBOARDING.md §9: يشتغل قبل أي رسم — يقرأ كوكي waha_prefs ويطبّق
+    // lang/dir/data-theme فوراً، يمنع وميض الافتراضي قبل التصحيح.
+    scripts: [{ children: PREFS_BOOTSTRAP_SCRIPT }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -76,13 +79,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 // lang="ar" dir="rtl" يبقى الافتراضي المُصيَّر من الخادم (SSR) — يطابق سلوك
-// التطبيق قبل هذا التغيير تماماً لأي طلب بلا كوكي waha_prefs بعد. src/lib/waha-prefs.ts
+// التطبيق قبل هذا التغيير تماماً لأي طلب بلا كوكي waha_prefs بعد. src/lib/prefs.ts
 // يصحّحه على العميل عند الإقلاع إن كانت الكوكي تقول غير ذلك (راجع RootComponent
 // أدناه) — قد يظهر ومضة بسيطة قبل تشغيل جافاسكربت في حالة locale=en/theme=dark
 // من واحة، وهذا محدود حالياً بغياب قراءة الكوكي على الخادم (SSR) لهذا المكوّن.
 function RootShell({ children }: { children: ReactNode }) {
+  // lang/dir الافتراضيان هنا (عربي/RTL) هما فقط ما يرسمه السيرفر قبل أي كوكي —
+  // سكربت PREFS_BOOTSTRAP_SCRIPT بـ<head> يصححهما فوراً عند وجود تفضيلات واحة،
+  // فـsuppressHydrationWarning متعمّد: نتوقع الاختلاف ولا نريد React يشتكي منه.
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head><HeadContent /></head>
       <body>{children}<Scripts /></body>
     </html>
@@ -91,12 +97,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
-  // waha ONBOARDING.md §9 — يقرأ كوكي waha_prefs عند الإقلاع + يستمع لبثّ
-  // postMessage اللاحق من rail واحة، بلا إعادة تحميل. راجع src/lib/waha-prefs.ts
-  // للعقد الكامل (التحقق من event.origin + data.source معاً، الخ).
-  useEffect(() => initWahaPrefsSync(), []);
-
+  useWahaPrefs();
   return (
     <QueryClientProvider client={queryClient}>
       <ThemedBackground />
