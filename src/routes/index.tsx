@@ -163,7 +163,7 @@ function Index() {
             ))}
             {recent.length === 0 && (
               <div className="rounded-md border border-dashed border-hairline p-8 text-center text-sm text-muted-foreground">
-                ما فيه فحوصات سابقة بعد — ابدأ أول فحص من الأعلى.
+                لا توجد فحوصات سابقة حتى الآن — ابدأ أول فحص من الأعلى.
               </div>
             )}
           </div>
