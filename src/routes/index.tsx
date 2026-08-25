@@ -194,7 +194,7 @@ function ScoreBadge({ score }: { score: number }) {
   const color = score >= 85 ? "text-pass border-pass/30 bg-pass/10"
     : score >= 70 ? "text-warn border-warn/30 bg-warn/10"
     : "text-fail border-fail/30 bg-fail/10";
-  const label = score >= 85 ? "متوافق كليًا" : score >= 70 ? "يحتاج تحسين" : "غير متوافق";
+  const label = score >= 85 ? "متوافق كليًا" : score >= 70 ? "بحاجة إلى تحسين" : "غير متوافق";
   return (
     <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-[10px] font-bold ${color}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />

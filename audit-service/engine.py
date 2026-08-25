@@ -672,7 +672,7 @@ def build_prompt() -> str:
 2. لا تُبلّغ عن عنصر بأنه "مفقود" (Missing) إلا إذا فحصت الشريحة كاملة وتأكدت من غيابه. شريط الحالة الحكومي هو شريط رفيع أعلى الصفحة فيه نص مثل "موقع حكومي رسمي/مسجل لدى هيئة الحكومة الرقمية" — إن رأيت هذا النص فالقاعدة ملتزم بها ولا تذكرها.
 3. إن لم تكن متأكداً من مخالفة، اجعل confidence "منخفضة" أو لا تذكرها إطلاقاً — الدقة أهم من العدد.
 جميع الحقول النصية الحرة (evidence وrecommendation) يجب أن تكون بالكامل باللغة العربية الفصحى — ممنوع أي كلمة إنجليزية في evidence أو recommendation إلا أسماء تقنية لا مقابل عربي شائع لها (مثل CSS أو aria-current).
-لكل مخالفة حدد الموقع عبر box_2d: تخيّل الصورة مقسّمة لشبكة 3×3 متساوية (يمين/وسط/يسار × أعلى/وسط/أسفل)، واختر اسم الخانة اللي يقع فيها مركز العنصر المخالف — قيمة واحدة فقط من: "أعلى-يسار", "أعلى-وسط", "أعلى-يمين", "وسط-يسار", "وسط-وسط", "وسط-يمين", "أسفل-يسار", "أسفل-وسط", "أسفل-يمين". لا تُرجِع إحداثيات رقمية أبداً.
+لكل مخالفة حدد الموقع عبر box_2d: تخيّل الصورة مقسّمة لشبكة 3×3 متساوية (يمين/وسط/يسار × أعلى/وسط/أسفل)، واختر اسم الخانة التي يقع فيها مركز العنصر المخالف — قيمة واحدة فقط من: "أعلى-يسار", "أعلى-وسط", "أعلى-يمين", "وسط-يسار", "وسط-وسط", "وسط-يمين", "أسفل-يسار", "أسفل-وسط", "أسفل-يمين". لا تُرجِع إحداثيات رقمية أبداً.
 مع كل مخالفة أضف أيضاً: rule_id + severity + confidence + evidence + recommendation.
 لا تُرجِع مخالفة بدون دليل بصري واضح في evidence."""
 
@@ -872,7 +872,7 @@ def _run_visual_scan_sync(client: OpenAI, page: dict) -> tuple[list[dict], list[
                     reasoning_effort="none",
                     response_format=MINISTRY_VIOLATIONS_SCHEMA,
                     messages=[
-                        {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]}. ALL text fields (evidence, recommendation) MUST be written entirely in Arabic — no English words except untranslatable technical terms. No masks. Max 15."},
+                        {"role": "system", "content": "Return violations as JSON object {\"violations\": [...]}. ALL text fields (evidence, recommendation) MUST be written entirely in formal Modern Standard Arabic (الفصحى) in an official government-report register — absolutely no colloquial or dialect words, and no English words except untranslatable technical terms. No masks. Max 15."},
                         {"role": "user", "content": [
                             {"type": "text", "text": PROMPT + tile_note},
                             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},

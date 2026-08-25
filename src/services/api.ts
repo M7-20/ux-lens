@@ -112,7 +112,7 @@ async function fetchAudit(url: string): Promise<Audit> {
   });
   if (res.status === 401) {
     redirectToLogin();
-    throw new Error("غير مصرح");
+    throw new Error("غير مصرح بالوصول");
   }
   if (!res.ok) {
     const body = await res.json().catch(() => null);
